@@ -5,11 +5,9 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 
-import dev.lagwave.wavestack.hardware.Servo.EzServo;
-import dev.lagwave.wavestack.hardware.Servo.PwmPresets;
-import dev.lagwave.wavestack.subsytem.WaveSubsytem;
+import dev.easyfamily.easystack.subsytem.EasySubsytem;
 
-public class Slide implements WaveSubsytem {
+public class Slide implements EasySubsytem {
 
     DcMotorEx slide_motor;
 

@@ -2,12 +2,10 @@ package org.firstinspires.ftc.teamcode.opModes;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.hardware.Gamepad;
 
 import org.firstinspires.ftc.teamcode.subsystems.Shooter;
 
-
-import dev.lagwave.wavestack.gamepad.EasyGamepad;
+import dev.easyfamily.easystack.gamepad.EasyGamepad;
 
 @TeleOp(name = "Shooter")
 public class teleOP extends OpMode {

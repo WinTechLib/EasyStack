@@ -1,26 +1,21 @@
 package org.firstinspires.ftc.teamcode.subsystems;
 
-import com.qualcomm.robotcore.hardware.CRServo;
-import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
-import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.hardware.ServoController;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 
-import dev.lagwave.wavestack.control.PIDCoefficients;
-import dev.lagwave.wavestack.control.PIDController;
-import dev.lagwave.wavestack.feedforward.FFCoefficients;
-import dev.lagwave.wavestack.feedforward.FFController;
-import dev.lagwave.wavestack.hardware.EasyMotor;
-import dev.lagwave.wavestack.hardware.EasyMotorGroup;
-import dev.lagwave.wavestack.hardware.Servo.EzServo;
-import dev.lagwave.wavestack.hardware.Servo.EzServoGroup;
-import dev.lagwave.wavestack.subsytem.WaveSubsytem;
-import dev.lagwave.wavestack.util.InterpLUT;
+import dev.easyfamily.easystack.control.PIDCoefficients;
+import dev.easyfamily.easystack.control.PIDController;
+import dev.easyfamily.easystack.feedforward.FFCoefficients;
+import dev.easyfamily.easystack.feedforward.FFController;
+import dev.easyfamily.easystack.hardware.EasyMotor;
+import dev.easyfamily.easystack.hardware.EasyMotorGroup;
+import dev.easyfamily.easystack.hardware.Servo.EzServo;
+import dev.easyfamily.easystack.hardware.Servo.EzServoGroup;
+import dev.easyfamily.easystack.subsytem.EasySubsytem;
+import dev.easyfamily.easystack.util.InterpLUT;
 
-public class Shooter implements WaveSubsytem {
+public class Shooter implements EasySubsytem {
 
     private EasyMotor shooter_motor;
     private EasyMotor shooter_motor_left;

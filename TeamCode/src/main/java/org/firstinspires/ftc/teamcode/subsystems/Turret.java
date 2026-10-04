@@ -4,14 +4,14 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 
-import dev.lagwave.wavestack.control.PIDCoefficients;
-import dev.lagwave.wavestack.feedforward.FFCoefficients;
-import dev.lagwave.wavestack.hardware.Servo.EzAbsoluteAnalogEncoder;
-import dev.lagwave.wavestack.hardware.Servo.EzCRServo;
-import dev.lagwave.wavestack.hardware.Servo.EzCRServoGroup;
-import dev.lagwave.wavestack.subsytem.WaveSubsytem;
+import dev.easyfamily.easystack.control.PIDCoefficients;
+import dev.easyfamily.easystack.feedforward.FFCoefficients;
+import dev.easyfamily.easystack.hardware.Servo.EzAbsoluteAnalogEncoder;
+import dev.easyfamily.easystack.subsytem.EasySubsytem;
+import dev.easyfamily.easystack.hardware.Servo.EzCRServo;
+import dev.easyfamily.easystack.hardware.Servo.EzCRServoGroup;
 
-public class Turret implements WaveSubsytem {
+public class Turret implements EasySubsytem {
     private EzCRServo Axon1;
     private EzCRServo Axon2;
     private EzCRServoGroup turretServos;
