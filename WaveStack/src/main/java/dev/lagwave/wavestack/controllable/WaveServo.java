@@ -1,4 +1,4 @@
-package dev.lagwave.wavestack.hardware;
+package dev.lagwave.wavestack.controllable;
 
 import com.qualcomm.robotcore.hardware.PwmControl;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
@@ -19,7 +19,7 @@ public interface WaveServo extends WaveHardwareDevice {
     WaveServo reverse();
     WaveServo setPwmRange(PwmControl.PwmRange pwmRange);
     WaveServo setCachingTolerance(double tolerance);
-    WaveServo setSpeed(double positionPerSecond); // <= 0 = instantâneo (só afeta a estimativa)
+    WaveServo setSpeed(double positionPerSecond);
 
     WaveServo addState(String name, double position);
     void setState(String name);

@@ -9,7 +9,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import java.util.HashMap;
 import java.util.Map;
 
-import dev.lagwave.wavestack.hardware.WaveServo;
+import dev.lagwave.wavestack.controllable.WaveServo;
 
 public class EzServo implements WaveServo {
     private static final double TOLERANCIA_ALVO = 0.001;

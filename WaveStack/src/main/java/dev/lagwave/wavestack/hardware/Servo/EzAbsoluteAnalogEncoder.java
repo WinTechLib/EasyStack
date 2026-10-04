@@ -1,9 +1,9 @@
-package dev.lagwave.wavestack.hardware;
+package dev.lagwave.wavestack.hardware.Servo;
 
 import com.qualcomm.robotcore.hardware.AnalogInput;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-public class WaveAbsoluteAnalogEncoder {
+public class EzAbsoluteAnalogEncoder {
     private final AnalogInput input;
     private final double rangeVolts;
     private final AngleUnit unit;
@@ -12,11 +12,11 @@ public class WaveAbsoluteAnalogEncoder {
     private double offset = 0.0;
     private boolean inverted = false;
 
-    public WaveAbsoluteAnalogEncoder(HardwareMap hwMap, String nome) {
+    public EzAbsoluteAnalogEncoder(HardwareMap hwMap, String nome) {
         this(hwMap, nome, 3.3, AngleUnit.RADIANS);
     }
 
-    public WaveAbsoluteAnalogEncoder(HardwareMap hwMap, String nome, double rangeVolts, AngleUnit unit) {
+    public EzAbsoluteAnalogEncoder(HardwareMap hwMap, String nome, double rangeVolts, AngleUnit unit) {
         this.input = hwMap.get(AnalogInput.class, nome);
         this.rangeVolts = rangeVolts;
         this.unit = unit;
@@ -24,18 +24,18 @@ public class WaveAbsoluteAnalogEncoder {
     }
 
 
-    public WaveAbsoluteAnalogEncoder setOffset(double offset) {
+    public EzAbsoluteAnalogEncoder setOffset(double offset) {
         this.offset = offset;
         return this;
     }
 
-    public WaveAbsoluteAnalogEncoder zero() {
+    public EzAbsoluteAnalogEncoder zero() {
         this.offset = 0.0;
         this.offset = getAngle();
         return this;
     }
 
-    public WaveAbsoluteAnalogEncoder setInverted(boolean inverted) {
+    public EzAbsoluteAnalogEncoder setInverted(boolean inverted) {
         this.inverted = inverted;
         return this;
     }

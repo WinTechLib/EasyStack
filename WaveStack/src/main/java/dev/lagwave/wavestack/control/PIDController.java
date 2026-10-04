@@ -4,7 +4,7 @@ public class PIDController {
 
     private final PIDCoefficients coefficients;
 
-    // State variables
+
     private double sumError = 0;
     private double lastError = 0;
     private double lastTime = 0;
@@ -25,24 +25,19 @@ public class PIDController {
 
         double error = target - current;
 
-        // Proportional
         double P = coefficients.kP * error;
 
-        // Integral
         if (deltaTime > 0) {
             sumError += error * deltaTime;
         }
         double I = coefficients.kI * sumError;
 
-        // Derivative
         double derivative = (deltaTime > 0) ? (error - lastError) / deltaTime : 0;
         double D = coefficients.kD * derivative;
 
-        // Store for next loop
         lastError = error;
         lastTime = currentTime;
 
-        // Total output
         return P + I + D;
     }
 }

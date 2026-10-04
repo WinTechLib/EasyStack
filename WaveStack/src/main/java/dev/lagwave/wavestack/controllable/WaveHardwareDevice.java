@@ -1,4 +1,4 @@
-package dev.lagwave.wavestack.hardware;
+package dev.lagwave.wavestack.controllable;
 
 public interface WaveHardwareDevice {
     void enable();

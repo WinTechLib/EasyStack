@@ -8,7 +8,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import dev.lagwave.wavestack.hardware.WaveServo;
+import dev.lagwave.wavestack.controllable.WaveServo;
 
 
 public class    EzServoGroup implements WaveServo, Iterable<EzServo> {

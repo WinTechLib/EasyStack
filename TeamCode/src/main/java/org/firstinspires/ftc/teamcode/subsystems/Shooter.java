@@ -31,15 +31,11 @@ public class Shooter implements WaveSubsytem {
     public static double targetVelocity;
 
     public boolean on = false;
-
-    // Configuração do PID e FeedForward
     PIDCoefficients pidCoefficients = new PIDCoefficients(0, 0, 0);
     FFCoefficients ffCoefficients = new FFCoefficients(0,0,0);
 
     PIDController pidController = new PIDController(pidCoefficients);
     FFController ffController = new FFController(ffCoefficients);
-
-    // Interpolação Linear
     InterpLUT shooterVelocity = new InterpLUT();
     InterpLUT PositionAng = new InterpLUT();
 
@@ -52,11 +48,11 @@ public class Shooter implements WaveSubsytem {
         BlockerServo = new EzServo(hardwareMap, "BlockerServo")
                 .setLimits(0.3, 0.8)
                 .addState("Closed", 1)
-
                 .addState("Open", 0);
+
         AnguladorLeft = new EzServo(hardwareMap, "AnguladorLeft")
                 .setInverted(true);
-        AnguladorLeft = new EzServo(hardwareMap, "AnguladorLeft");
+        AnguladorRight = new EzServo(hardwareMap, "AnguladorRight");
 
         Anguladores = new EzServoGroup(AnguladorLeft, AnguladorRight)
                 .setCachingTolerance(0.05)
@@ -90,7 +86,7 @@ public class Shooter implements WaveSubsytem {
 
     @Override
     public void loop() {
-        double distance = 0; // Váriavel da distância aqui
+        double distance = 0;
 
         double currentTicks = shooter_motor.getVelocity();
         targetVelocity = shooterVelocity.get(distance);
