@@ -5,6 +5,8 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.PwmControl;
 
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+
 import dev.lagwave.wavestack.control.PIDCoefficients;
 import dev.lagwave.wavestack.control.PIDController;
 import dev.lagwave.wavestack.controllable.WaveCRServo;
@@ -57,7 +59,7 @@ public class EzCRServo implements WaveCRServo {
         return this;
     }
 
-    @Override
+
     public EzCRServo setPositionalControl(EzAbsoluteAnalogEncoder encoder,
                                           PIDCoefficients coefficients,
                                           double toleranciaAlvo) {
@@ -65,6 +67,15 @@ public class EzCRServo implements WaveCRServo {
         this.pid = new PIDController(coefficients);
         this.toleranciaAlvo = toleranciaAlvo;
         return this;
+    }
+
+    @Override
+    public EzCRServo setPositionalControl(EzAbsoluteAnalogEncoder encoder,
+                                          PIDCoefficients coefficients,
+                                          double tolerancia,
+                                          AngleUnit unidade) {
+        return setPositionalControl(encoder, coefficients,
+                encoder.getUnit().fromUnit(unidade, tolerancia));
     }
 
     @Override

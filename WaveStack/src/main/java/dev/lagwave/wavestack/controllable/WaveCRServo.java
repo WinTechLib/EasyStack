@@ -2,6 +2,8 @@ package dev.lagwave.wavestack.controllable;
 
 import com.qualcomm.robotcore.hardware.PwmControl;
 
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+
 import dev.lagwave.wavestack.control.PIDCoefficients;
 import dev.lagwave.wavestack.feedforward.FFCoefficients;
 import dev.lagwave.wavestack.hardware.Servo.EzAbsoluteAnalogEncoder;
@@ -21,7 +23,7 @@ public interface WaveCRServo extends WaveHardwareDevice {
     WaveCRServo setCachingTolerance(double tolerance);
     WaveCRServo setPositionalControl(EzAbsoluteAnalogEncoder encoder,
                                      PIDCoefficients coefficients,
-                                     double targetTolerance);
+                                     double targetTolerance, AngleUnit toleranceUnit    );
     WaveCRServo setFeedforward(FFCoefficients coefficients);
 
     double getPower();

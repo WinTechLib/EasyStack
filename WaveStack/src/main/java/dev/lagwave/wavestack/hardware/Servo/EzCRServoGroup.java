@@ -2,6 +2,8 @@ package dev.lagwave.wavestack.hardware.Servo;
 
 import com.qualcomm.robotcore.hardware.PwmControl;
 
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+
 import java.util.Arrays;
 import java.util.Iterator;
 
@@ -82,8 +84,9 @@ public class EzCRServoGroup implements WaveCRServo, Iterable<EzCRServo> {
     @Override
     public EzCRServoGroup setPositionalControl(EzAbsoluteAnalogEncoder encoder,
                                                PIDCoefficients coefficients,
-                                               double toleranciaAlvo) {
-        group[0].setPositionalControl(encoder, coefficients, toleranciaAlvo);
+                                               double tolerancia,
+                                               AngleUnit unidade) {
+        group[0].setPositionalControl(encoder, coefficients, tolerancia, unidade);
         return this;
     }
 

@@ -23,6 +23,17 @@ public class EzAbsoluteAnalogEncoder {
         this.fullRotation = unit == AngleUnit.RADIANS ? 2 * Math.PI : 360.0;
     }
 
+    public double getAngle(AngleUnit outraUnidade) {
+        return outraUnidade.fromUnit(unit, getAngle());
+    }
+
+    public double getAngleDegrees() {
+        return getAngle(AngleUnit.DEGREES);
+    }
+
+    public double getAngleRadians() {
+        return getAngle(AngleUnit.RADIANS);
+    }
 
     public EzAbsoluteAnalogEncoder setOffset(double offset) {
         this.offset = offset;
