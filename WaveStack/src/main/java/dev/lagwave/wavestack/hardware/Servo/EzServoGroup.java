@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
 import dev.lagwave.wavestack.hardware.WaveServo;
 
 
-public class EzServoGroup implements WaveServo, Iterable<EzServo> {
+public class    EzServoGroup implements WaveServo, Iterable<EzServo> {
     private final EzServo[] group;
 
     public EzServoGroup(EzServo leader, EzServo... followers) {
