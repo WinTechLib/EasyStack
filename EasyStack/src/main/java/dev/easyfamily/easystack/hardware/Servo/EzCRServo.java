@@ -7,8 +7,8 @@ import com.qualcomm.robotcore.hardware.PwmControl;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 
+import dev.easyfamily.easystack.control.EasyPIDController;
 import dev.easyfamily.easystack.control.PIDCoefficients;
-import dev.easyfamily.easystack.control.PIDController;
 import dev.easyfamily.easystack.controllable.EasyCRServo;
 import dev.easyfamily.easystack.feedforward.FFController;
 import dev.easyfamily.easystack.feedforward.FFCoefficients;
@@ -22,7 +22,7 @@ public class EzCRServo implements EasyCRServo {
     private boolean invertido = false;
 
     private EzAbsoluteAnalogEncoder encoder;
-    private PIDController pid;
+    private EasyPIDController pid;
     private FFController ff;
     private double alvo = Double.NaN;
     private double toleranciaAlvo;
@@ -64,7 +64,7 @@ public class EzCRServo implements EasyCRServo {
                                           PIDCoefficients coefficients,
                                           double toleranciaAlvo) {
         this.encoder = encoder;
-        this.pid = new PIDController(coefficients);
+        this.pid = new EasyPIDController(coefficients);
         this.toleranciaAlvo = toleranciaAlvo;
         return this;
     }

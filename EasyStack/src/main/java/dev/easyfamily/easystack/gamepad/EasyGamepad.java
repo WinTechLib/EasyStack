@@ -40,10 +40,6 @@ public class EasyGamepad {
         rightBumper.update(gamepad.right_bumper, now);
     }
 
-    // =========================
-    // A
-    // =========================
-
     public boolean a() {
         return a.isDown();
     }
@@ -68,11 +64,6 @@ public class EasyGamepad {
     public long getADebounce() {
         return a.getDebounce();
     }
-
-    // =========================
-    // B
-    // =========================
-
     public boolean b() {
         return b.isDown();
     }
@@ -97,10 +88,6 @@ public class EasyGamepad {
     public long getBDebounce() {
         return b.getDebounce();
     }
-
-    // =========================
-    // X
-    // =========================
 
     public boolean x() {
         return x.isDown();
@@ -127,10 +114,6 @@ public class EasyGamepad {
         return x.getDebounce();
     }
 
-    // =========================
-    // Y
-    // =========================
-
     public boolean y() {
         return y.isDown();
     }
@@ -156,9 +139,6 @@ public class EasyGamepad {
         return y.getDebounce();
     }
 
-    // =========================
-    // D-PAD
-    // =========================
 
     public boolean dpadUp() {
         return dpadUp.isDown();
@@ -244,10 +224,6 @@ public class EasyGamepad {
         return this;
     }
 
-    // =========================
-    // BUMPERS
-    // =========================
-
     public boolean leftBumper() {
         return leftBumper.isDown();
     }
@@ -290,10 +266,6 @@ public class EasyGamepad {
         return this;
     }
 
-    // =========================
-    // STICKS
-    // =========================
-
     public float leftStickX() {
         return gamepad.left_stick_x;
     }
@@ -310,9 +282,6 @@ public class EasyGamepad {
         return gamepad.right_stick_y;
     }
 
-    // =========================
-    // TRIGGERS
-    // =========================
 
     public float leftTrigger() {
         return gamepad.left_trigger;
@@ -321,10 +290,6 @@ public class EasyGamepad {
     public float rightTrigger() {
         return gamepad.right_trigger;
     }
-
-    // =========================
-    // RESET
-    // =========================
 
     public EasyGamepad resetToggles() {
         a.resetToggle();
@@ -346,11 +311,6 @@ public class EasyGamepad {
     public Gamepad getGamepad() {
         return gamepad;
     }
-
-    // =========================
-    // INTERNAL BUTTON STATE
-    // =========================
-
     private static class ButtonState {
 
         private boolean current;

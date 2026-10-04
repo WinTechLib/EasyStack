@@ -4,8 +4,8 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 
+import dev.easyfamily.easystack.control.EasyPIDController;
 import dev.easyfamily.easystack.control.PIDCoefficients;
-import dev.easyfamily.easystack.control.PIDController;
 import dev.easyfamily.easystack.feedforward.FFCoefficients;
 import dev.easyfamily.easystack.feedforward.FFController;
 import dev.easyfamily.easystack.hardware.EasyMotor;
@@ -29,7 +29,7 @@ public class Shooter implements EasySubsytem {
     PIDCoefficients pidCoefficients = new PIDCoefficients(0, 0, 0);
     FFCoefficients ffCoefficients = new FFCoefficients(0,0,0);
 
-    PIDController pidController = new PIDController(pidCoefficients);
+    EasyPIDController pidController = new EasyPIDController(pidCoefficients);
     FFController ffController = new FFController(ffCoefficients);
     InterpLUT shooterVelocity = new InterpLUT();
     InterpLUT PositionAng = new InterpLUT();
