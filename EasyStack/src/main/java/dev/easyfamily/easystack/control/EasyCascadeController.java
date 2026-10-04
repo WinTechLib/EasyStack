@@ -1,13 +1,13 @@
 package dev.easyfamily.easystack.control;
 
-public class EasyCascadeController extends EasyCotroller {
-    private final EasyCotroller primary;
-    private final EasyCotroller secondary;
+public class EasyCascadeController extends EasyController {
+    private final EasyController primary;
+    private final EasyController secondary;
     private double velMeasuredValue;
     private double prevMeasuredValue;
     private double velSetPoint;
 
-    public EasyCascadeController(EasyCotroller primary, EasyCotroller secondary) {
+    public EasyCascadeController(EasyController primary, EasyController secondary) {
         this.primary = primary;
         this.secondary = secondary;
     }

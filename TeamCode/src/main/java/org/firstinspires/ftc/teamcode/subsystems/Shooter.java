@@ -12,10 +12,10 @@ import dev.easyfamily.easystack.hardware.EasyMotor;
 import dev.easyfamily.easystack.hardware.EasyMotorGroup;
 import dev.easyfamily.easystack.hardware.Servo.EzServo;
 import dev.easyfamily.easystack.hardware.Servo.EzServoGroup;
-import dev.easyfamily.easystack.subsytem.EasySubsytem;
+import dev.easyfamily.easystack.subsytem.EasySubsystem;
 import dev.easyfamily.easystack.util.InterpLUT;
 
-public class Shooter implements EasySubsytem {
+public class Shooter implements EasySubsystem {
 
     private EasyMotor shooter_motor;
     private EasyMotor shooter_motor_left;

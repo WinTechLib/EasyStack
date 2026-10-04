@@ -7,11 +7,11 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import dev.easyfamily.easystack.control.PIDCoefficients;
 import dev.easyfamily.easystack.feedforward.FFCoefficients;
 import dev.easyfamily.easystack.hardware.Servo.EzAbsoluteAnalogEncoder;
-import dev.easyfamily.easystack.subsytem.EasySubsytem;
+import dev.easyfamily.easystack.subsytem.EasySubsystem;
 import dev.easyfamily.easystack.hardware.Servo.EzCRServo;
 import dev.easyfamily.easystack.hardware.Servo.EzCRServoGroup;
 
-public class Turret implements EasySubsytem {
+public class Turret implements EasySubsystem {
     private EzCRServo Axon1;
     private EzCRServo Axon2;
     private EzCRServoGroup turretServos;

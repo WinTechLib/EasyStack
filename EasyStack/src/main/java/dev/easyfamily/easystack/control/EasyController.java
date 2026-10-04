@@ -2,7 +2,7 @@ package dev.easyfamily.easystack.control;
 
 import androidx.core.math.MathUtils;
 
-public abstract class EasyCotroller {
+public abstract class EasyController {
     private double minOutput = 0;
     private double maxOutput = Double.POSITIVE_INFINITY;
     private double openF = 0;
@@ -18,7 +18,7 @@ public abstract class EasyCotroller {
     protected double lastTimeStamp;
     protected double period;
 
-    public EasyCotroller() {
+    public EasyController() {
         reset();
         period = 0;
     }
@@ -86,21 +86,21 @@ public abstract class EasyCotroller {
     public double getPeriod() {
         return period;
     }
-    public EasyCotroller setMinOutput(double minOutput) {
+    public EasyController setMinOutput(double minOutput) {
         this.minOutput = Math.abs(minOutput);
         return this;
     }
     public double getMinOutput() {
         return minOutput;
     }
-    public EasyCotroller setMaxOutput(double maxOutput) {
+    public EasyController setMaxOutput(double maxOutput) {
         this.maxOutput = maxOutput;
         return this;
     }
     public double getMaxOutput() {
         return maxOutput;
     }
-    public EasyCotroller setOpenF(double f) {
+    public EasyController setOpenF(double f) {
         this.openF = f;
         return this;
     }
