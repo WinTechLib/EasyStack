@@ -3,66 +3,127 @@ package dev.lagwave.wavestack.hardware.Servo;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.PwmControl;
 import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.hardware.ServoControllerEx;
+import com.qualcomm.robotcore.hardware.ServoImplEx;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import dev.lagwave.wavestack.hardware.WaveServo;
 
 public class EzServo implements WaveServo {
-    private final Servo servo;
+    private static final double TOLERANCIA_ALVO = 0.001;
+
+    private final ServoImplEx servo;
     private final String nome;
+    private final Map<String, Double> estados = new HashMap<>();
 
     private double rangeGraus = 180.0;
     private double min = 0.0;
     private double max = 1.0;
     private double cachingTolerance = 0.0001;
-    private double ultimaPosicao = Double.NaN;
+    private boolean invertido = false;
+    private double ultimoRaw = Double.NaN;
+
+    private double velocidade = 0.0;
+    private double alvo = Double.NaN;
+    private double inicio = Double.NaN;
+    private long inicioNanos = 0L;
 
     public EzServo(HardwareMap hwMap, String nome) {
-        this.servo = hwMap.get(Servo.class, nome);
+        this.servo = hwMap.get(ServoImplEx.class, nome);
         this.nome = nome;
     }
 
     public EzServo(HardwareMap hwMap, String nome, double rangeGraus) {
-        this.servo = hwMap.get(Servo.class, nome);
-        this.nome = nome;
-        this.rangeGraus = rangeGraus;
+        this(hwMap, nome);
+        setAngleRange(rangeGraus);
     }
 
     @Override
     public EzServo setLimits(double min, double max) {
+        if (min < 0.0 || max > 1.0 || min >= max) {
+            throw new IllegalArgumentException("Limites inválidos: 0 <= min < max <= 1");
+        }
         this.min = min;
         this.max = max;
-        return this;
-    }
-
-    public EzServo setCachingTolerance(double tolerance) {
-        this.cachingTolerance = tolerance;
+        resetarCache();
         return this;
     }
 
     @Override
-    public void setPosition(double posicao) {
-        double posCalculada = (posicao - min) / (max - min);
+    public EzServo setAngleRange(double degrees) {
+        if (degrees <= 0) throw new IllegalArgumentException("Range deve ser > 0");
+        this.rangeGraus = degrees;
+        return this;
+    }
 
-        if (!Double.isNaN(ultimaPosicao) && Math.abs(posCalculada - ultimaPosicao) <= cachingTolerance) {
+    @Override
+    public EzServo setCachingTolerance(double tolerance) {
+        this.cachingTolerance = Math.max(0.0, tolerance);
+        return this;
+    }
+
+    @Override
+    public EzServo setSpeed(double positionPerSecond) {
+        this.velocidade = positionPerSecond;
+        return this;
+    }
+
+    @Override
+    public EzServo reverse() {
+        return setInverted(!invertido);
+    }
+
+    @Override
+    public EzServo setInverted(boolean inverted) {
+        this.invertido = inverted;
+        servo.setDirection(inverted ? Servo.Direction.REVERSE : Servo.Direction.FORWARD);
+        resetarCache();
+        return this;
+    }
+
+    @Override
+    public EzServo setPwmRange(PwmControl.PwmRange pwmRange) {
+        servo.setPwmRange(pwmRange);
+        resetarCache();
+        return this;
+    }
+
+    @Override
+    public EzServo addState(String nome, double posicao) {
+        estados.put(nome, clamp(posicao));
+        return this;
+    }
+
+
+    @Override
+    public void setPosition(double posicao) {
+        double pos = clamp(posicao);
+        double raw = min + pos * (max - min);
+
+        if (!Double.isNaN(ultimoRaw) && Math.abs(raw - ultimoRaw) <= cachingTolerance) {
             return;
         }
 
-        servo.setPosition(posCalculada);
-        ultimaPosicao = posCalculada;
+        iniciarMovimento(pos);
+        servo.setPosition(raw);
+        ultimoRaw = raw;
+    }
+
+    @Override
+    public void rotateBy(double deltaPosicao) {
+        setPosition(getPosition() + deltaPosicao);
     }
 
     @Override
     public void setAngle(double angulo) {
-        double posicao = angulo / rangeGraus;
-        setPosition(posicao);
+        setPosition(angulo / rangeGraus);
     }
 
     @Override
     public void setAngle(double angulo, AngleUnit angleUnit) {
-        double anguloEmGraus = angleUnit == AngleUnit.RADIANS ? Math.toDegrees(angulo) : angulo;
-        setAngle(anguloEmGraus);
+        setAngle(paraGraus(angulo, angleUnit));
     }
 
     @Override
@@ -72,34 +133,25 @@ public class EzServo implements WaveServo {
 
     @Override
     public void turnByAngle(double angulo, AngleUnit angleUnit) {
-        double anguloEmGraus = angleUnit == AngleUnit.RADIANS ? Math.toDegrees(angulo) : angulo;
-        turnByAngle(anguloEmGraus);
+        turnByAngle(paraGraus(angulo, angleUnit));
     }
 
     @Override
-    public EzServo reverse() {
-        servo.setDirection(servo.getDirection() == Servo.Direction.FORWARD ? Servo.Direction.REVERSE : Servo.Direction.FORWARD);
-        return this;
+    public void setState(String nome) {
+        Double pos = estados.get(nome);
+        if (pos == null) {
+            throw new IllegalArgumentException("Estado desconhecido '" + nome + "' em " + this.nome);
+        }
+        setPosition(pos);
     }
-
-    @Override
-    public EzServo setInverted(boolean inverted) {
-        servo.setDirection(inverted ? Servo.Direction.REVERSE : Servo.Direction.FORWARD);
-        return this;
-    }
-
-    public EzServo setPwmRange(PwmControl.PwmRange pwmRange) {
-        getController().setServoPwmRange(servo.getPortNumber(), pwmRange);
-        return this;
-    }
-
     @Override
     public double getPosition() {
-        return !Double.isNaN(ultimaPosicao) ? (ultimaPosicao * (max - min) + min) : servo.getPosition();
+        return (getRawPosition() - min) / (max - min);
     }
 
+    @Override
     public double getRawPosition() {
-        return servo.getPosition();
+        return !Double.isNaN(ultimoRaw) ? ultimoRaw : servo.getPosition();
     }
 
     @Override
@@ -109,29 +161,73 @@ public class EzServo implements WaveServo {
 
     @Override
     public double getAngle(AngleUnit angleUnit) {
-        double anguloGraus = getAngle();
-        return angleUnit == AngleUnit.RADIANS ? Math.toRadians(anguloGraus) : anguloGraus;
+        double graus = getAngle();
+        return angleUnit == AngleUnit.RADIANS ? Math.toRadians(graus) : graus;
+    }
+
+    @Override
+    public double getEstimatedPosition() {
+        if (Double.isNaN(alvo)) return Double.NaN;
+        if (velocidade <= 0) return alvo;
+
+        double dist = velocidade * (System.nanoTime() - inicioNanos) / 1e9;
+        double delta = alvo - inicio;
+        return Math.abs(delta) <= dist ? alvo : inicio + Math.signum(delta) * dist;
+    }
+
+    @Override
+    public boolean isAtTarget() {
+        double est = getEstimatedPosition();
+        return Double.isNaN(est) || Math.abs(alvo - est) <= TOLERANCIA_ALVO;
+    }
+
+    @Override
+    public boolean isInverted() {
+        return invertido;
     }
 
     @Override
     public void disable() {
-        getController().pwmDisable();
+        servo.setPwmDisable();
     }
 
+    @Override
     public void enable() {
-        getController().pwmEnable();
+        servo.setPwmEnable();
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return servo.isPwmEnabled();
     }
 
     @Override
     public String getDeviceType() {
-        return "EzServo: " + nome + " na porta " + servo.getPortNumber();
-    }
-
-    public ServoControllerEx getController() {
-        return (ServoControllerEx) servo.getController();
+        return "EzServo: " + nome;
     }
 
     public Servo getNativeServo() {
         return servo;
+    }
+
+
+
+    private void resetarCache() {
+        ultimoRaw = Double.NaN;
+    }
+
+    private void iniciarMovimento(double novoAlvo) {
+        double atual = getEstimatedPosition();
+        inicio = Double.isNaN(atual) ? novoAlvo : atual;
+        alvo = novoAlvo;
+        inicioNanos = System.nanoTime();
+    }
+
+    private static double clamp(double v) {
+        return Math.max(0.0, Math.min(1.0, v));
+    }
+
+    private static double paraGraus(double angulo, AngleUnit unit) {
+        return unit == AngleUnit.RADIANS ? Math.toDegrees(angulo) : angulo;
     }
 }
