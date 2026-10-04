@@ -1,4 +1,4 @@
-package dev.easyfamily.easystack.util;
+package dev.lagwave.wavestack.util;
 
 public class MathFunctions {
 
