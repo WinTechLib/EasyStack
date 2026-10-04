@@ -19,8 +19,6 @@ import dev.lagwave.wavestack.util.InterpLUT;
 public class Shooter implements WaveSubsytem {
 
     private EasyMotor shooter_motor;
-    private EasyMotor shooter_motor_left;
-    private EasyMotorGroup shooterMotors;
     public static double targetVelocity;
 
     public boolean on = false;
@@ -45,11 +43,6 @@ public class Shooter implements WaveSubsytem {
                 .brakeMode()
                 .reversed();
 
-        shooter_motor_left = new EasyMotor(hardwareMap, "shooter_motor")
-                .brakeMode()
-                .reversed();
-
-        shooterMotors = new EasyMotorGroup(shooter_motor, shooter_motor_left);
 
         shooterVelocity.add(20, 1000);
         shooterVelocity.add(40, 1200);
@@ -69,9 +62,9 @@ public class Shooter implements WaveSubsytem {
         double ff = ffController.calculate(targetVelocity);
 
         if (on) {
-            shooterMotors.setPower(pid + ff);
+            shooter_motor.setPower(pid + ff);
         } else {
-            shooter_motor.setPower(0);
+            shooter_motor.stop();
         }
     }
 
