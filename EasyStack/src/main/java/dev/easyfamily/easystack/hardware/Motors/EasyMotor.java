@@ -1,4 +1,4 @@
-package dev.easyfamily.easystack.hardware;
+package dev.easyfamily.easystack.hardware.Motors;
 
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;

@@ -8,8 +8,8 @@ import dev.easyfamily.easystack.control.EasyPIDController;
 import dev.easyfamily.easystack.control.PIDCoefficients;
 import dev.easyfamily.easystack.feedforward.FFCoefficients;
 import dev.easyfamily.easystack.feedforward.FFController;
-import dev.easyfamily.easystack.hardware.EasyMotor;
-import dev.easyfamily.easystack.hardware.EasyMotorGroup;
+import dev.easyfamily.easystack.hardware.Motors.EasyMotor;
+import dev.easyfamily.easystack.hardware.Motors.EasyMotorGroup;
 import dev.easyfamily.easystack.hardware.Servo.EzServo;
 import dev.easyfamily.easystack.hardware.Servo.EzServoGroup;
 import dev.easyfamily.easystack.subsytem.EasySubsystem;
@@ -89,6 +89,7 @@ public class Shooter implements EasySubsystem {
         double pid = pidController.calculate(targetVelocity, currentTicks);
         double ff = ffController.calculate(targetVelocity);
         Anguladores.setAngle(targetAngle, AngleUnit.DEGREES);
+
         if (on) {
             BlockerServo.setState("Open");
             shooterMotors.setPower(pid + ff);
@@ -96,6 +97,7 @@ public class Shooter implements EasySubsystem {
              BlockerServo.setState("Closed");
             shooter_motor.setPower(0);
         }
+
     }
 
 }

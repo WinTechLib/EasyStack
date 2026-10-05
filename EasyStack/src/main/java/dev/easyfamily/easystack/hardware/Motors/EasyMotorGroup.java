@@ -1,4 +1,4 @@
-package dev.easyfamily.easystack.hardware;
+package dev.easyfamily.easystack.hardware.Motors;
 
 import dev.easyfamily.easystack.controllable.EasyControllable;
 
