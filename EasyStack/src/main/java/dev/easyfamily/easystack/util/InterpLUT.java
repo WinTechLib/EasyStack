@@ -1,4 +1,4 @@
- package dev.lagwave.wavestack.util;
+ package dev.easyfamily.easystack.util;
 
 import java.util.Map;
 import java.util.TreeMap;
