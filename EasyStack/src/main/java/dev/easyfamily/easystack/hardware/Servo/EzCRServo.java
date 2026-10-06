@@ -192,12 +192,30 @@ public class EzCRServo implements EasyCRServo, EasyRpmControllable {
         setPower(0.0);
     }
 
+    private boolean mesmoAngulo(double a, double b) {
+        double diferenca = (a - b) % encoder.getFullRotation();
+
+        if (diferenca > encoder.getFullRotation() / 2.0) {
+            diferenca -= encoder.getFullRotation();
+        }
+
+        if (diferenca <= -encoder.getFullRotation() / 2.0) {
+            diferenca += encoder.getFullRotation();
+        }
+
+        return Math.abs(diferenca) < 1e-9;
+    }
+
     @Override
     public void setTargetAngle(double angulo) {
         exigirPosicional();
-        rpmAlvo = Double.NaN;
-        alvo = normalizar(angulo);
-        pid.reset();
+
+        double novoAlvo = normalizar(angulo);
+
+        if (Double.isNaN(alvo) || !mesmoAngulo(alvo, novoAlvo)) {
+            alvo = novoAlvo;
+            pid.reset();
+        }
     }
 
     @Override
