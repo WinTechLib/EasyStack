@@ -16,7 +16,7 @@ public class EasyMotor implements EasyControllable {
     private double positionOffset = 0.0;
 
     private double lastPower = Double.NaN;
-    private final double cacheTolerance;
+    private double cacheTolerance;
 
     private double lastVelocity = 0;
     private long lastVelocityTime = System.nanoTime();
@@ -31,7 +31,7 @@ public class EasyMotor implements EasyControllable {
             double cacheTolerance
     ) {
         this.motor = hardwareMap.get(DcMotorEx.class, name);
-        this.cacheTolerance = cacheTolerance;
+        this.cacheTolerance = Math.max(0.0, cacheTolerance);
     }
 
     public double getRawPosition() {
@@ -48,7 +48,9 @@ public class EasyMotor implements EasyControllable {
     }
 
     public EasyMotor atPosition(double position) {
-        positionOffset = getRawPosition() - (position * direction);
+        positionOffset =
+                getRawPosition() - (position * direction);
+
         return this;
     }
 
@@ -72,14 +74,19 @@ public class EasyMotor implements EasyControllable {
     @Override
     public void setPower(double power) {
 
-        double appliedPower = power * direction;
+        double appliedPower =
+                power * direction;
 
         if (
                 Double.isNaN(lastPower)
-                        || Math.abs(appliedPower - lastPower) > cacheTolerance
+                        || Math.abs(appliedPower - lastPower)
+                        > cacheTolerance
         ) {
 
-            motor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+            motor.setMode(
+                    DcMotor.RunMode.RUN_WITHOUT_ENCODER
+            );
+
             motor.setPower(appliedPower);
 
             lastPower = appliedPower;
@@ -91,8 +98,32 @@ public class EasyMotor implements EasyControllable {
         return lastPower;
     }
 
+    /**
+     * Define a tolerância utilizada pelo caching de potência.
+     *
+     * O motor só recebe uma nova escrita quando a diferença
+     * entre a potência atual e a nova potência for maior que
+     * essa tolerância.
+     */
+    public EasyMotor setCachingTolerance(
+            double tolerance
+    ) {
+        cacheTolerance =
+                Math.max(0.0, tolerance);
+
+        return this;
+    }
+
+    /**
+     * Retorna a tolerância atual do caching.
+     */
+    public double getCachingTolerance() {
+        return cacheTolerance;
+    }
+
     public EasyMotor reverse() {
         direction *= -1.0;
+        lastPower = Double.NaN;
         return this;
     }
 
@@ -128,15 +159,18 @@ public class EasyMotor implements EasyControllable {
     public double getAcceleration() {
 
         double velocity = getVelocity();
+
         long now = System.nanoTime();
 
-        double dt = (now - lastVelocityTime) / 1e9;
+        double dt =
+                (now - lastVelocityTime) / 1e9;
 
         if (dt <= 0) {
             return 0;
         }
 
-        double acceleration = (velocity - lastVelocity) / dt;
+        double acceleration =
+                (velocity - lastVelocity) / dt;
 
         lastVelocity = velocity;
         lastVelocityTime = now;
@@ -152,7 +186,11 @@ public class EasyMotor implements EasyControllable {
             double current,
             CurrentUnit unit
     ) {
-        motor.setCurrentAlert(current, unit);
+        motor.setCurrentAlert(
+                current,
+                unit
+        );
+
         return this;
     }
 
@@ -161,11 +199,15 @@ public class EasyMotor implements EasyControllable {
     }
 
     public double getCPR() {
-        return motor.getMotorType().getTicksPerRev();
+        return motor
+                .getMotorType()
+                .getTicksPerRev();
     }
 
     public double getMaxRPM() {
-        return motor.getMotorType().getMaxRPM();
+        return motor
+                .getMotorType()
+                .getMaxRPM();
     }
 
     public double getRPM() {
@@ -174,8 +216,16 @@ public class EasyMotor implements EasyControllable {
                 * 60.0;
     }
 
-    public EasyMotor setInverted(boolean inverted) {
-        direction = inverted ? -1.0 : 1.0;
+    public EasyMotor setInverted(
+            boolean inverted
+    ) {
+        direction =
+                inverted
+                        ? -1.0
+                        : 1.0;
+
+        lastPower = Double.NaN;
+
         return this;
     }
 
@@ -184,8 +234,14 @@ public class EasyMotor implements EasyControllable {
     }
 
     public EasyMotor stopAndResetEncoder() {
-        motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        motor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
+        motor.setMode(
+                DcMotor.RunMode.STOP_AND_RESET_ENCODER
+        );
+
+        motor.setMode(
+                DcMotor.RunMode.RUN_WITHOUT_ENCODER
+        );
 
         positionOffset = 0.0;
         lastPower = Double.NaN;
