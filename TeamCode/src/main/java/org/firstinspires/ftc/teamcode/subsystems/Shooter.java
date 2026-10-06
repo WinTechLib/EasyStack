@@ -59,9 +59,6 @@ public class Shooter implements EasySubsystem {
         PositionAng.add(80, 50);
         PositionAng.createLUT();
 
-
-
-
         shooter_motor = new EasyMotor(hardwareMap, "shooter_motor")
                 .brakeMode()
                 .reversed();
