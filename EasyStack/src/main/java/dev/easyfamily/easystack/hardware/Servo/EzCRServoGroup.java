@@ -9,9 +9,10 @@ import java.util.Iterator;
 
 import dev.easyfamily.easystack.control.PIDCoefficients;
 import dev.easyfamily.easystack.controllable.EasyCRServo;
+import dev.easyfamily.easystack.controllable.EasyRpmControllable;
 import dev.easyfamily.easystack.feedforward.FFCoefficients;
 
-public class EzCRServoGroup implements EasyCRServo, Iterable<EzCRServo> {
+public class EzCRServoGroup implements EasyCRServo, EasyRpmControllable, Iterable<EzCRServo> {
     private final EzCRServo[] group;
 
     public EzCRServoGroup(EzCRServo leader, EzCRServo... followers) {
@@ -54,6 +55,76 @@ public class EzCRServoGroup implements EasyCRServo, Iterable<EzCRServo> {
     private void copiarPotencia() {
         double p = group[0].getPower();
         for (int i = 1; i < group.length; i++) group[i].escrever(p);
+    }
+    public EzCRServoGroup setMaxRpm(double rpm) {
+        group[0].setMaxRpm(rpm);
+        return this;
+    }
+
+    public EzCRServoGroup setMinPower(double potenciaMinima) {
+        group[0].setMinPower(potenciaMinima);
+        return this;
+    }
+    public EzCRServoGroup setVelocityControl(EzAbsoluteAnalogEncoder encoder, PIDCoefficients coefficients) {
+        group[0].setVelocityControl(encoder, coefficients);
+        return this;
+    }
+
+    public EzCRServoGroup setVelocityFilter(double timeConstantSeconds) {
+        group[0].setVelocityFilter(timeConstantSeconds);
+        return this;
+    }
+
+    public EzCRServoGroup setEncoderInverted(boolean inverted) {
+        group[0].setEncoderInverted(inverted);
+        return this;
+    }
+
+    public EzCRServoGroup setRpmTolerance(double rpm) {
+        group[0].setRpmTolerance(rpm);
+        return this;
+    }
+
+    @Override
+    public void setTargetRpm(double rpm) {
+        group[0].setTargetRpm(rpm);
+        copiarPotencia();
+    }
+
+    public double rpmToPower(double rpm) {
+        return group[0].rpmToPower(rpm);
+    }
+
+    public double powerToRpm(double potencia) {
+        return group[0].powerToRpm(potencia);
+    }
+
+    public double getMeasuredRpm() {
+        return group[0].getMeasuredRpm();
+    }
+
+    public double getEstimatedRpm() {
+        return group[0].getEstimatedRpm();
+    }
+
+    @Override
+    public double getRpm() {
+        return group[0].getRpm();
+    }
+
+    @Override
+    public double getTargetRpm() {
+        return group[0].getTargetRpm();
+    }
+
+    @Override
+    public double getMaxRpm() {
+        return group[0].getMaxRpm();
+    }
+
+    @Override
+    public boolean isAtTargetRpm() {
+        return group[0].isAtTargetRpm();
     }
 
     @Override

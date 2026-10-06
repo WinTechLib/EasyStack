@@ -78,21 +78,16 @@ public class Shooter implements EasySubsystem {
 
     @Override
     public void loop() {
-        double distance = 0;
 
-        double currentTicks = shooter_motor.getVelocity();
-        targetVelocity = shooterVelocity.get(distance);
+        double distance = 0;
         double targetAngle = PositionAng.get(distance);
-        double pid = pidController.calculate(targetVelocity, currentTicks);
-        double ff = ffController.calculate(targetVelocity);
         Anguladores.setAngle(targetAngle, AngleUnit.DEGREES);
 
         if (on) {
             BlockerServo.setState("Open");
-            shooterMotors.setPower(pid + ff);
         } else {
              BlockerServo.setState("Closed");
-            shooter_motor.setPower(0);
+
         }
 
     }
