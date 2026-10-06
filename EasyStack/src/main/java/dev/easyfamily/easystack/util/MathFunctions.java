@@ -1,4 +1,4 @@
-package dev.lagwave.wavestack.util;
+package dev.easyfamily.easystack.util;
 
 public class MathFunctions {
 
@@ -19,6 +19,11 @@ public class MathFunctions {
 
     public static boolean epsilonEquals(double a, double b, double epsilon) {
         return Math.abs(a - b) < epsilon;
+    }
+
+    public static double applyDeadband(double value, double deadband){
+        value = Math.abs(value) > deadband ? value : 0;
+        return value;
     }
 
 }
