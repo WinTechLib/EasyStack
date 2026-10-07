@@ -8,16 +8,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import dev.easyfamily.easystack.controllable.EasyServo;
-import dev.easyfamily.easystack.hardware.Servo.EzServo;
 
+public class EasyServoGroup implements dev.easyfamily.easystack.controllable.EasyServo, Iterable<EasyServo> {
+    private final EasyServo[] group;
 
-public class EzServoGroup implements EasyServo, Iterable<EzServo> {
-    private final EzServo[] group;
-
-    public EzServoGroup(EzServo leader, EzServo... followers) {
+    public EasyServoGroup(EasyServo leader, EasyServo... followers) {
         if (leader == null) throw new IllegalArgumentException("Leader não pode ser null");
-        group = new EzServo[followers.length + 1];
+        group = new EasyServo[followers.length + 1];
         group[0] = leader;
         for (int i = 0; i < followers.length; i++) {
             if (followers[i] == null) throw new IllegalArgumentException("Follower null no índice " + i);
@@ -28,101 +25,101 @@ public class EzServoGroup implements EasyServo, Iterable<EzServo> {
 
     @Override
     public void setPosition(double posicao) {
-        for (EzServo servo : group) servo.setPosition(posicao);
+        for (EasyServo servo : group) servo.setPosition(posicao);
     }
 
     @Override
     public void rotateBy(double deltaPosicao) {
-        for (EzServo servo : group) servo.rotateBy(deltaPosicao);
+        for (EasyServo servo : group) servo.rotateBy(deltaPosicao);
     }
 
     @Override
     public void setAngle(double angulo) {
-        for (EzServo servo : group) servo.setAngle(angulo);
+        for (EasyServo servo : group) servo.setAngle(angulo);
     }
 
     @Override
     public void setAngle(double angulo, AngleUnit angleUnit) {
-        for (EzServo servo : group) servo.setAngle(angulo, angleUnit);
+        for (EasyServo servo : group) servo.setAngle(angulo, angleUnit);
     }
 
     @Override
     public void turnByAngle(double angulo) {
-        for (EzServo servo : group) servo.turnByAngle(angulo);
+        for (EasyServo servo : group) servo.turnByAngle(angulo);
     }
 
     @Override
     public void turnByAngle(double angulo, AngleUnit angleUnit) {
-        for (EzServo servo : group) servo.turnByAngle(angulo, angleUnit);
+        for (EasyServo servo : group) servo.turnByAngle(angulo, angleUnit);
     }
 
     @Override
     public void setState(String nome) {
-        for (EzServo servo : group) servo.setState(nome);
+        for (EasyServo servo : group) servo.setState(nome);
     }
 
     @Override
-    public EzServoGroup reverse() {
-        for (EzServo servo : group) servo.reverse();
+    public EasyServoGroup reverse() {
+        for (EasyServo servo : group) servo.reverse();
         return this;
     }
 
     @Override
-    public EzServoGroup setInverted(boolean inverted) {
-        for (EzServo servo : group) servo.setInverted(inverted);
+    public EasyServoGroup setInverted(boolean inverted) {
+        for (EasyServo servo : group) servo.setInverted(inverted);
         return this;
     }
 
     @Override
-    public EzServoGroup setLimits(double min, double max) {
-        for (EzServo servo : group) servo.setLimits(min, max);
+    public EasyServoGroup setLimits(double min, double max) {
+        for (EasyServo servo : group) servo.setLimits(min, max);
         return this;
     }
 
     @Override
-    public EzServoGroup setAngleRange(double degrees) {
-        for (EzServo servo : group) servo.setAngleRange(degrees);
+    public EasyServoGroup setAngleRange(double degrees) {
+        for (EasyServo servo : group) servo.setAngleRange(degrees);
         return this;
     }
 
     @Override
-    public EzServoGroup setCachingTolerance(double tolerance) {
-        for (EzServo servo : group) servo.setCachingTolerance(tolerance);
+    public EasyServoGroup setCachingTolerance(double tolerance) {
+        for (EasyServo servo : group) servo.setCachingTolerance(tolerance);
         return this;
     }
 
     @Override
-    public EzServoGroup setPwmRange(PwmControl.PwmRange pwmRange) {
-        for (EzServo servo : group) servo.setPwmRange(pwmRange);
+    public EasyServoGroup setPwmRange(PwmControl.PwmRange pwmRange) {
+        for (EasyServo servo : group) servo.setPwmRange(pwmRange);
         return this;
     }
 
     @Override
-    public EzServoGroup setSpeed(double positionPerSecond) {
-        for (EzServo servo : group) servo.setSpeed(positionPerSecond);
+    public EasyServoGroup setSpeed(double positionPerSecond) {
+        for (EasyServo servo : group) servo.setSpeed(positionPerSecond);
         return this;
     }
 
     @Override
-    public EzServoGroup addState(String nome, double posicao) {
-        for (EzServo servo : group) servo.addState(nome, posicao);
+    public EasyServoGroup addState(String nome, double posicao) {
+        for (EasyServo servo : group) servo.addState(nome, posicao);
         return this;
     }
 
 
     @Override
     public void disable() {
-        for (EzServo servo : group) servo.disable();
+        for (EasyServo servo : group) servo.disable();
     }
 
     @Override
     public void enable() {
-        for (EzServo servo : group) servo.enable();
+        for (EasyServo servo : group) servo.enable();
     }
 
     @Override
     public boolean isEnabled() {
-        for (EzServo servo : group) {
+        for (EasyServo servo : group) {
             if (!servo.isEnabled()) return false;
         }
         return true;
@@ -158,7 +155,7 @@ public class EzServoGroup implements EasyServo, Iterable<EzServo> {
 
     @Override
     public boolean isAtTarget() {
-        for (EzServo servo : group) {
+        for (EasyServo servo : group) {
             if (!servo.isAtTarget()) return false;
         }
         return true;
@@ -176,12 +173,12 @@ public class EzServoGroup implements EasyServo, Iterable<EzServo> {
 
     public List<Double> getPositions() {
         return Arrays.stream(group)
-                .map(EzServo::getPosition)
+                .map(EasyServo::getPosition)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public Iterator<EzServo> iterator() {
+    public Iterator<EasyServo> iterator() {
         return Arrays.asList(group).iterator();
     }
 }

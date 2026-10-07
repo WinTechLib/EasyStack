@@ -9,9 +9,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import java.util.HashMap;
 import java.util.Map;
 
-import dev.easyfamily.easystack.controllable.EasyServo;
-
-public class EzServo implements EasyServo {
+public class EasyServo implements dev.easyfamily.easystack.controllable.EasyServo {
     private static final double TOLERANCIA_ALVO = 0.001;
 
     private final ServoImplEx servo;
@@ -30,18 +28,18 @@ public class EzServo implements EasyServo {
     private double inicio = Double.NaN;
     private long inicioNanos = 0L;
 
-    public EzServo(HardwareMap hwMap, String nome) {
+    public EasyServo(HardwareMap hwMap, String nome) {
         this.servo = hwMap.get(ServoImplEx.class, nome);
         this.nome = nome;
     }
 
-    public EzServo(HardwareMap hwMap, String nome, double rangeGraus) {
+    public EasyServo(HardwareMap hwMap, String nome, double rangeGraus) {
         this(hwMap, nome);
         setAngleRange(rangeGraus);
     }
 
     @Override
-    public EzServo setLimits(double min, double max) {
+    public EasyServo setLimits(double min, double max) {
         if (min < 0.0 || max > 1.0 || min >= max) {
             throw new IllegalArgumentException("Limites inválidos: 0 <= min < max <= 1");
         }
@@ -52,31 +50,31 @@ public class EzServo implements EasyServo {
     }
 
     @Override
-    public EzServo setAngleRange(double degrees) {
+    public EasyServo setAngleRange(double degrees) {
         if (degrees <= 0) throw new IllegalArgumentException("Range deve ser > 0");
         this.rangeGraus = degrees;
         return this;
     }
 
     @Override
-    public EzServo setCachingTolerance(double tolerance) {
+    public EasyServo setCachingTolerance(double tolerance) {
         this.cachingTolerance = Math.max(0.0, tolerance);
         return this;
     }
 
     @Override
-    public EzServo setSpeed(double positionPerSecond) {
+    public EasyServo setSpeed(double positionPerSecond) {
         this.velocidade = positionPerSecond;
         return this;
     }
 
     @Override
-    public EzServo reverse() {
+    public EasyServo reverse() {
         return setInverted(!invertido);
     }
 
     @Override
-    public EzServo setInverted(boolean inverted) {
+    public EasyServo setInverted(boolean inverted) {
         this.invertido = inverted;
         servo.setDirection(inverted ? Servo.Direction.REVERSE : Servo.Direction.FORWARD);
         resetarCache();
@@ -84,14 +82,14 @@ public class EzServo implements EasyServo {
     }
 
     @Override
-    public EzServo setPwmRange(PwmControl.PwmRange pwmRange) {
+    public EasyServo setPwmRange(PwmControl.PwmRange pwmRange) {
         servo.setPwmRange(pwmRange);
         resetarCache();
         return this;
     }
 
     @Override
-    public EzServo addState(String nome, double posicao) {
+    public EasyServo addState(String nome, double posicao) {
         estados.put(nome, clamp(posicao));
         return this;
     }

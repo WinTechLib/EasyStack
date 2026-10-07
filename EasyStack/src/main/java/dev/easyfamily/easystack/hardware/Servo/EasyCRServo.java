@@ -9,13 +9,12 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 
 import dev.easyfamily.easystack.control.EasyPIDController;
 import dev.easyfamily.easystack.control.PIDCoefficients;
-import dev.easyfamily.easystack.controllable.EasyCRServo;
 import dev.easyfamily.easystack.controllable.EasyRpmControllable;
 import dev.easyfamily.easystack.feedforward.FFController;
 import dev.easyfamily.easystack.feedforward.FFCoefficients;
 import dev.easyfamily.easystack.util.LowPassFilter;
 
-public class EzCRServo implements EasyCRServo, EasyRpmControllable {
+public class EasyCRServo implements dev.easyfamily.easystack.controllable.EasyCRServo, EasyRpmControllable {
     private final CRServoImplEx servo;
     private final String nome;
 
@@ -23,7 +22,7 @@ public class EzCRServo implements EasyCRServo, EasyRpmControllable {
     private double ultimaPotencia = Double.NaN;
     private boolean invertido = false;
 
-    private EzAbsoluteAnalogEncoder encoder;
+    private EasyAbsoluteAnalogEncoder encoder;
     private EasyPIDController pid;
     private FFController ff;
     private double alvo = Double.NaN;
@@ -44,13 +43,13 @@ public class EzCRServo implements EasyCRServo, EasyRpmControllable {
     private boolean amostraValida = false;
     private LowPassFilter filtroRpm = new LowPassFilter(0.05);
 
-    public EzCRServo(HardwareMap hwMap, String nome) {
+    public EasyCRServo(HardwareMap hwMap, String nome) {
         this.servo = hwMap.get(CRServoImplEx.class, nome);
         this.nome = nome;
     }
 
     @Override
-    public EzCRServo setInverted(boolean inverted) {
+    public EasyCRServo setInverted(boolean inverted) {
         this.invertido = inverted;
         servo.setDirection(inverted ? DcMotorSimple.Direction.REVERSE : DcMotorSimple.Direction.FORWARD);
         ultimaPotencia = Double.NaN;
@@ -58,24 +57,24 @@ public class EzCRServo implements EasyCRServo, EasyRpmControllable {
     }
 
     @Override
-    public EzCRServo reverse() {
+    public EasyCRServo reverse() {
         return setInverted(!invertido);
     }
 
     @Override
-    public EzCRServo setPwmRange(PwmControl.PwmRange range) {
+    public EasyCRServo setPwmRange(PwmControl.PwmRange range) {
         servo.setPwmRange(range);
         ultimaPotencia = Double.NaN;
         return this;
     }
 
     @Override
-    public EzCRServo setCachingTolerance(double tolerance) {
+    public EasyCRServo setCachingTolerance(double tolerance) {
         this.cachingTolerance = Math.max(0.0, tolerance);
         return this;
     }
 
-    public EzCRServo setPositionalControl(EzAbsoluteAnalogEncoder encoder, PIDCoefficients coefficients, double toleranciaAlvo) {
+    public EasyCRServo setPositionalControl(EasyAbsoluteAnalogEncoder encoder, PIDCoefficients coefficients, double toleranciaAlvo) {
         this.encoder = encoder;
         this.amostraValida = false;
         this.pid = new EasyPIDController(coefficients);
@@ -84,45 +83,45 @@ public class EzCRServo implements EasyCRServo, EasyRpmControllable {
     }
 
     @Override
-    public EzCRServo setPositionalControl(EzAbsoluteAnalogEncoder encoder, PIDCoefficients coefficients, double tolerancia, AngleUnit unidade) {
+    public EasyCRServo setPositionalControl(EasyAbsoluteAnalogEncoder encoder, PIDCoefficients coefficients, double tolerancia, AngleUnit unidade) {
         return setPositionalControl(encoder, coefficients, encoder.getUnit().fromUnit(unidade, tolerancia));
     }
 
     @Override
-    public EzCRServo setFeedforward(FFCoefficients coefficients) {
+    public EasyCRServo setFeedforward(FFCoefficients coefficients) {
         this.ff = coefficients == null ? null : new FFController(coefficients);
         return this;
     }
 
 
-    public EzCRServo setMaxRpm(double rpm) {
+    public EasyCRServo setMaxRpm(double rpm) {
         if (rpm <= 0) throw new IllegalArgumentException("maxRpm deve ser > 0. Servo: " + nome);
         this.maxRpm = rpm;
         return this;
     }
 
-    public EzCRServo setMinPower(double potenciaMinima) {
+    public EasyCRServo setMinPower(double potenciaMinima) {
         this.potenciaMinima = Math.max(0.0, Math.min(0.95, potenciaMinima));
         return this;
     }
 
-    public EzCRServo setVelocityControl(EzAbsoluteAnalogEncoder encoder, PIDCoefficients coefficients) {
+    public EasyCRServo setVelocityControl(EasyAbsoluteAnalogEncoder encoder, PIDCoefficients coefficients) {
         this.encoder = encoder;
         this.amostraValida = false;
         this.velPid = new EasyPIDController(coefficients);
         return this;
     }
-    public EzCRServo setVelocityFilter(double timeConstantSeconds) {
+    public EasyCRServo setVelocityFilter(double timeConstantSeconds) {
         this.filtroRpm = new LowPassFilter(timeConstantSeconds);
         return this;
     }
 
-    public EzCRServo setEncoderInverted(boolean inverted) {
+    public EasyCRServo setEncoderInverted(boolean inverted) {
         this.sinalEncoder = inverted ? -1.0 : 1.0;
         return this;
     }
 
-    public EzCRServo setRpmTolerance(double rpm) {
+    public EasyCRServo setRpmTolerance(double rpm) {
         this.toleranciaRpm = Math.abs(rpm);
         return this;
     }

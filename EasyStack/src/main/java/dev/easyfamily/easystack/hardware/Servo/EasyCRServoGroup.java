@@ -8,16 +8,15 @@ import java.util.Arrays;
 import java.util.Iterator;
 
 import dev.easyfamily.easystack.control.PIDCoefficients;
-import dev.easyfamily.easystack.controllable.EasyCRServo;
 import dev.easyfamily.easystack.controllable.EasyRpmControllable;
 import dev.easyfamily.easystack.feedforward.FFCoefficients;
 
-public class EzCRServoGroup implements EasyCRServo, EasyRpmControllable, Iterable<EzCRServo> {
-    private final EzCRServo[] group;
+public class EasyCRServoGroup implements dev.easyfamily.easystack.controllable.EasyCRServo, EasyRpmControllable, Iterable<EasyCRServo> {
+    private final EasyCRServo[] group;
 
-    public EzCRServoGroup(EzCRServo leader, EzCRServo... followers) {
+    public EasyCRServoGroup(EasyCRServo leader, EasyCRServo... followers) {
         if (leader == null) throw new IllegalArgumentException("Leader não pode ser null");
-        group = new EzCRServo[followers.length + 1];
+        group = new EasyCRServo[followers.length + 1];
         group[0] = leader;
         for (int i = 0; i < followers.length; i++) {
             if (followers[i] == null) throw new IllegalArgumentException("Follower null no índice " + i);
@@ -27,12 +26,12 @@ public class EzCRServoGroup implements EasyCRServo, EasyRpmControllable, Iterabl
 
     @Override
     public void setPower(double potencia) {
-        for (EzCRServo servo : group) servo.setPower(potencia);
+        for (EasyCRServo servo : group) servo.setPower(potencia);
     }
 
     @Override
     public void stop() {
-        for (EzCRServo servo : group) servo.stop();
+        for (EasyCRServo servo : group) servo.stop();
     }
 
     @Override
@@ -56,31 +55,31 @@ public class EzCRServoGroup implements EasyCRServo, EasyRpmControllable, Iterabl
         double p = group[0].getPower();
         for (int i = 1; i < group.length; i++) group[i].escrever(p);
     }
-    public EzCRServoGroup setMaxRpm(double rpm) {
+    public EasyCRServoGroup setMaxRpm(double rpm) {
         group[0].setMaxRpm(rpm);
         return this;
     }
 
-    public EzCRServoGroup setMinPower(double potenciaMinima) {
+    public EasyCRServoGroup setMinPower(double potenciaMinima) {
         group[0].setMinPower(potenciaMinima);
         return this;
     }
-    public EzCRServoGroup setVelocityControl(EzAbsoluteAnalogEncoder encoder, PIDCoefficients coefficients) {
+    public EasyCRServoGroup setVelocityControl(EasyAbsoluteAnalogEncoder encoder, PIDCoefficients coefficients) {
         group[0].setVelocityControl(encoder, coefficients);
         return this;
     }
 
-    public EzCRServoGroup setVelocityFilter(double timeConstantSeconds) {
+    public EasyCRServoGroup setVelocityFilter(double timeConstantSeconds) {
         group[0].setVelocityFilter(timeConstantSeconds);
         return this;
     }
 
-    public EzCRServoGroup setEncoderInverted(boolean inverted) {
+    public EasyCRServoGroup setEncoderInverted(boolean inverted) {
         group[0].setEncoderInverted(inverted);
         return this;
     }
 
-    public EzCRServoGroup setRpmTolerance(double rpm) {
+    public EasyCRServoGroup setRpmTolerance(double rpm) {
         group[0].setRpmTolerance(rpm);
         return this;
     }
@@ -128,42 +127,42 @@ public class EzCRServoGroup implements EasyCRServo, EasyRpmControllable, Iterabl
     }
 
     @Override
-    public EzCRServoGroup reverse() {
-        for (EzCRServo servo : group) servo.reverse();
+    public EasyCRServoGroup reverse() {
+        for (EasyCRServo servo : group) servo.reverse();
         return this;
     }
 
     @Override
-    public EzCRServoGroup setInverted(boolean inverted) {
-        for (EzCRServo servo : group) servo.setInverted(inverted);
+    public EasyCRServoGroup setInverted(boolean inverted) {
+        for (EasyCRServo servo : group) servo.setInverted(inverted);
         return this;
     }
 
     @Override
-    public EzCRServoGroup setPwmRange(PwmControl.PwmRange range) {
-        for (EzCRServo servo : group) servo.setPwmRange(range);
+    public EasyCRServoGroup setPwmRange(PwmControl.PwmRange range) {
+        for (EasyCRServo servo : group) servo.setPwmRange(range);
         return this;
     }
 
     @Override
-    public EzCRServoGroup setCachingTolerance(double tolerance) {
-        for (EzCRServo servo : group) servo.setCachingTolerance(tolerance);
+    public EasyCRServoGroup setCachingTolerance(double tolerance) {
+        for (EasyCRServo servo : group) servo.setCachingTolerance(tolerance);
         return this;
     }
 
 
     @Override
-    public EzCRServoGroup setPositionalControl(EzAbsoluteAnalogEncoder encoder,
-                                               PIDCoefficients coefficients,
-                                               double tolerancia,
-                                               AngleUnit unidade) {
+    public EasyCRServoGroup setPositionalControl(EasyAbsoluteAnalogEncoder encoder,
+                                                 PIDCoefficients coefficients,
+                                                 double tolerancia,
+                                                 AngleUnit unidade) {
         group[0].setPositionalControl(encoder, coefficients, tolerancia, unidade);
         return this;
     }
 
 
     @Override
-    public EzCRServoGroup setFeedforward(FFCoefficients coefficients) {
+    public EasyCRServoGroup setFeedforward(FFCoefficients coefficients) {
         group[0].setFeedforward(coefficients);
         return this;
     }
@@ -191,17 +190,17 @@ public class EzCRServoGroup implements EasyCRServo, EasyRpmControllable, Iterabl
 
     @Override
     public void disable() {
-        for (EzCRServo servo : group) servo.disable();
+        for (EasyCRServo servo : group) servo.disable();
     }
 
     @Override
     public void enable() {
-        for (EzCRServo servo : group) servo.enable();
+        for (EasyCRServo servo : group) servo.enable();
     }
 
     @Override
     public boolean isEnabled() {
-        for (EzCRServo servo : group) {
+        for (EasyCRServo servo : group) {
             if (!servo.isEnabled()) return false;
         }
         return true;
@@ -213,7 +212,7 @@ public class EzCRServoGroup implements EasyCRServo, EasyRpmControllable, Iterabl
     }
 
     @Override
-    public Iterator<EzCRServo> iterator() {
+    public Iterator<EasyCRServo> iterator() {
         return Arrays.asList(group).iterator();
     }
 }

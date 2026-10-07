@@ -10,8 +10,8 @@ import dev.easyfamily.easystack.feedforward.FFCoefficients;
 import dev.easyfamily.easystack.feedforward.FFController;
 import dev.easyfamily.easystack.hardware.Motors.EasyMotor;
 import dev.easyfamily.easystack.hardware.Motors.EasyMotorGroup;
-import dev.easyfamily.easystack.hardware.Servo.EzServo;
-import dev.easyfamily.easystack.hardware.Servo.EzServoGroup;
+import dev.easyfamily.easystack.hardware.Servo.EasyServo;
+import dev.easyfamily.easystack.hardware.Servo.EasyServoGroup;
 import dev.easyfamily.easystack.subsytem.EasySubsystem;
 import dev.easyfamily.easystack.util.InterpLUT;
 
@@ -20,14 +20,14 @@ public class Shooter implements EasySubsystem {
     private EasyMotor shooter_motor;
     private EasyMotor shooter_motor_left;
     private EasyMotorGroup shooterMotors;
-    private EzServo BlockerServo;
-    private EzServo AnguladorLeft, AnguladorRight;
-    private EzServoGroup Anguladores;
+    private EasyServo BlockerServo;
+    private EasyServo AnguladorLeft, AnguladorRight;
+    private EasyServoGroup Anguladores;
     public static double targetVelocity;
 
     public boolean on = false;
     PIDCoefficients pidCoefficients = new PIDCoefficients(0, 0, 0);
-    FFCoefficients ffCoefficients = new FFCoefficients(0,0,0);
+    FFCoefficients ffCoefficients = new FFCoefficients(0, 0, 0);
 
     EasyPIDController pidController = new EasyPIDController(pidCoefficients);
     FFController ffController = new FFController(ffCoefficients);
@@ -40,16 +40,16 @@ public class Shooter implements EasySubsystem {
 
     @Override
     public void init(HardwareMap hardwareMap) {
-        BlockerServo = new EzServo(hardwareMap, "BlockerServo")
+        BlockerServo = new EasyServo(hardwareMap, "BlockerServo")
                 .setLimits(0.3, 0.8)
-                .addState("Closed", 1)
-                .addState("Open", 0);
+                .addState("Closed", 1) //When .setState("Closed"), the position will go to 1
+                .addState("Open", 0);  //When .setState("Open"), the position will go to 0
 
-        AnguladorLeft = new EzServo(hardwareMap, "AnguladorLeft")
+        AnguladorLeft = new EasyServo(hardwareMap, "AnguladorLeft", 360) // We create one EzServo
                 .setInverted(true);
-        AnguladorRight = new EzServo(hardwareMap, "AnguladorRight");
+        AnguladorRight = new EasyServo(hardwareMap, "AnguladorRight", 360); // And another
 
-        Anguladores = new EzServoGroup(AnguladorLeft, AnguladorRight)
+        Anguladores = new EasyServoGroup(AnguladorLeft, AnguladorRight) //And now we put on the parameters the two EzServos to create a group.
                 .setCachingTolerance(0.05)
                 .setLimits(0, 0.93);
 
@@ -62,11 +62,9 @@ public class Shooter implements EasySubsystem {
         shooter_motor = new EasyMotor(hardwareMap, "shooter_motor")
                 .brakeMode()
                 .reversed();
-
         shooter_motor_left = new EasyMotor(hardwareMap, "shooter_motor")
                 .brakeMode()
                 .reversed();
-
         shooterMotors = new EasyMotorGroup(shooter_motor, shooter_motor_left);
 
         shooterVelocity.add(20, 1000);
@@ -84,9 +82,9 @@ public class Shooter implements EasySubsystem {
         Anguladores.setAngle(targetAngle, AngleUnit.DEGREES);
 
         if (on) {
-            BlockerServo.setState("Open");
+            BlockerServo.setState("Open"); //0
         } else {
-             BlockerServo.setState("Closed");
+            BlockerServo.setState("Closed"); //1
 
         }
 

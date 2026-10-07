@@ -3,12 +3,12 @@ package dev.easyfamily.easystack.drivebase.swerve.coaxial;
 import dev.easyfamily.easystack.drivebase.swerve.ChassisSpeed;
 import dev.easyfamily.easystack.geometry.Vector2d;
 import dev.easyfamily.easystack.hardware.Motors.EasyMotor;
-import dev.easyfamily.easystack.hardware.Servo.EzCRServo;
+import dev.easyfamily.easystack.hardware.Servo.EasyCRServo;
 
 public class SwerveModule {
 
     private final EasyMotor driveMotor;
-    private final EzCRServo steeringServo;
+    private final EasyCRServo steeringServo;
 
     private final double maxSpeed;
     private final double tangentialAngle;
@@ -21,7 +21,7 @@ public class SwerveModule {
 
     public SwerveModule(
             EasyMotor driveMotor,
-            EzCRServo steeringServo,
+            EasyCRServo steeringServo,
             Vector2d offset,
             double maxSpeed
     ) {
@@ -292,7 +292,7 @@ public class SwerveModule {
     /**
      * Retorna o servo responsável pelo steering.
      */
-    public EzCRServo getSteeringServo() {
+    public EasyCRServo getSteeringServo() {
         return steeringServo;
     }
 

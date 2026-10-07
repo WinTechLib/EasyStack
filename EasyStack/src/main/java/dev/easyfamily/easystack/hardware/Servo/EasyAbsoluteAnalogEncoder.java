@@ -3,7 +3,7 @@ package dev.easyfamily.easystack.hardware.Servo;
 import com.qualcomm.robotcore.hardware.AnalogInput;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-public class EzAbsoluteAnalogEncoder {
+public class EasyAbsoluteAnalogEncoder {
     private final AnalogInput input;
     private final double rangeVolts;
     private final AngleUnit unit;
@@ -12,11 +12,11 @@ public class EzAbsoluteAnalogEncoder {
     private double offset = 0.0;
     private boolean inverted = false;
 
-    public EzAbsoluteAnalogEncoder(HardwareMap hwMap, String nome) {
+    public EasyAbsoluteAnalogEncoder(HardwareMap hwMap, String nome) {
         this(hwMap, nome, 3.3, AngleUnit.RADIANS);
     }
 
-    public EzAbsoluteAnalogEncoder(HardwareMap hwMap, String nome, double rangeVolts, AngleUnit unit) {
+    public EasyAbsoluteAnalogEncoder(HardwareMap hwMap, String nome, double rangeVolts, AngleUnit unit) {
         this.input = hwMap.get(AnalogInput.class, nome);
         this.rangeVolts = rangeVolts;
         this.unit = unit;
@@ -35,18 +35,18 @@ public class EzAbsoluteAnalogEncoder {
         return getAngle(AngleUnit.RADIANS);
     }
 
-    public EzAbsoluteAnalogEncoder setOffset(double offset) {
+    public EasyAbsoluteAnalogEncoder setOffset(double offset) {
         this.offset = offset;
         return this;
     }
 
-    public EzAbsoluteAnalogEncoder zero() {
+    public EasyAbsoluteAnalogEncoder zero() {
         this.offset = 0.0;
         this.offset = getAngle();
         return this;
     }
 
-    public EzAbsoluteAnalogEncoder setInverted(boolean inverted) {
+    public EasyAbsoluteAnalogEncoder setInverted(boolean inverted) {
         this.inverted = inverted;
         return this;
     }

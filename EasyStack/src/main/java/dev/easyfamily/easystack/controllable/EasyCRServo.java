@@ -6,7 +6,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 
 import dev.easyfamily.easystack.control.PIDCoefficients;
 import dev.easyfamily.easystack.feedforward.FFCoefficients;
-import dev.easyfamily.easystack.hardware.Servo.EzAbsoluteAnalogEncoder;
+import dev.easyfamily.easystack.hardware.Servo.EasyAbsoluteAnalogEncoder;
 
 public interface EasyCRServo extends EasyHardwareDevice {
     void setPower(double power);
@@ -19,7 +19,7 @@ public interface EasyCRServo extends EasyHardwareDevice {
     EasyCRServo reverse();
     EasyCRServo setPwmRange(PwmControl.PwmRange pwmRange);
     EasyCRServo setCachingTolerance(double tolerance);
-    EasyCRServo setPositionalControl(EzAbsoluteAnalogEncoder encoder,
+    EasyCRServo setPositionalControl(EasyAbsoluteAnalogEncoder encoder,
                                      PIDCoefficients coefficients,
                                      double targetTolerance, AngleUnit toleranceUnit    );
     EasyCRServo setFeedforward(FFCoefficients coefficients);
