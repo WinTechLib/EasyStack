@@ -1,6 +1,4 @@
 package dev.easyfamily.easystack.util;
-
-/** Média móvel das últimas N amostras. */
 public class MovingAverageFilter {
     private final double[] buffer;
     private int index = 0;

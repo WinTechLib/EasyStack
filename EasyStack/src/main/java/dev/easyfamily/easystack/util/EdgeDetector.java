@@ -1,6 +1,4 @@
 package dev.easyfamily.easystack.util;
-
-/** Detecta bordas de um boolean (chame update() uma vez por loop). */
 public class EdgeDetector {
     private boolean last;
     private boolean current;

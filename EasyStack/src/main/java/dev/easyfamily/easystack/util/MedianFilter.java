@@ -1,8 +1,6 @@
 package dev.easyfamily.easystack.util;
 
 import java.util.Arrays;
-
-/** Mediana das últimas N amostras (ótimo contra picos isolados, ex.: sensor de distância). */
 public class MedianFilter {
     private final double[] ring;
     private int index = 0;

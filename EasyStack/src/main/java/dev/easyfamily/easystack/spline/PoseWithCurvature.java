@@ -1,8 +1,6 @@
 package dev.easyfamily.easystack.spline;
 
 import dev.easyfamily.easystack.geometry.Pose2d;
-
-/** Ponto de um caminho: pose (heading = direção de deslocamento) + curvatura (1/unidade). */
 public class    PoseWithCurvature {
     public Pose2d pose;
     public double curvature;

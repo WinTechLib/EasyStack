@@ -15,11 +15,11 @@ public class EasyCRServoGroup implements dev.easyfamily.easystack.controllable.E
     private final EasyCRServo[] group;
 
     public EasyCRServoGroup(EasyCRServo leader, EasyCRServo... followers) {
-        if (leader == null) throw new IllegalArgumentException("Leader não pode ser null");
+        if (leader == null) throw new IllegalArgumentException("The Leader cant be null");
         group = new EasyCRServo[followers.length + 1];
         group[0] = leader;
         for (int i = 0; i < followers.length; i++) {
-            if (followers[i] == null) throw new IllegalArgumentException("Follower null no índice " + i);
+            if (followers[i] == null) throw new IllegalArgumentException("Follower null at index " + i);
             group[i + 1] = followers[i];
         }
     }
@@ -53,7 +53,7 @@ public class EasyCRServoGroup implements dev.easyfamily.easystack.controllable.E
 
     private void copiarPotencia() {
         double p = group[0].getPower();
-        for (int i = 1; i < group.length; i++) group[i].escrever(p);
+        for (int i = 1; i < group.length; i++) group[i].write(p);
     }
     public EasyCRServoGroup setMaxRpm(double rpm) {
         group[0].setMaxRpm(rpm);

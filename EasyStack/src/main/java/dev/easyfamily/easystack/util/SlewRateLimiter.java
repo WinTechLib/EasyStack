@@ -1,18 +1,12 @@
 package dev.easyfamily.easystack.util;
-
-/** Limita a taxa de variação (unidades/s) de um valor. Ex.: rampa de potência do drive. */
 public class SlewRateLimiter {
     private final double positiveRate;
     private final double negativeRate;
     private double previous;
     private long lastNanos;
-
-    /** rate em unidades por segundo (usado para subir e descer). */
     public SlewRateLimiter(double rate) {
         this(rate, -rate, 0.0);
     }
-
-    /** negativeRate deve ser negativo (ex.: -4.0). */
     public SlewRateLimiter(double positiveRate, double negativeRate, double initialValue) {
         this.positiveRate = positiveRate;
         this.negativeRate = negativeRate;

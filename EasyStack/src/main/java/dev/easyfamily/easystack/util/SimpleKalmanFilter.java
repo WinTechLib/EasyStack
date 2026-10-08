@@ -1,11 +1,4 @@
 package dev.easyfamily.easystack.util;
-
-/**
- * Filtro de Kalman 1D simples.
- * measurementError: ruído do sensor (maior = confia menos na medida).
- * estimateError: incerteza inicial da estimativa.
- * processNoise: quão rápido o valor real pode mudar (0.001 a 1; maior = responde mais rápido).
- */
 public class SimpleKalmanFilter {
     private final double measurementError;
     private final double processNoise;

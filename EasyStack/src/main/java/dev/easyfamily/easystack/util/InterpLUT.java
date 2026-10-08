@@ -11,12 +11,6 @@ public class InterpLUT {
     public void add(double input, double output) {
         table.put(input, output);
     }
-
-    /**
-     * Calcula as tangentes utilizadas pela interpolação cúbica.
-     *
-     * Deve ser chamado depois de adicionar todos os pontos.
-     */
     public void createLUT() {
 
         if (table.size() < 2) {
@@ -31,8 +25,6 @@ public class InterpLUT {
         Double[] y = table.values().toArray(new Double[0]);
 
         int n = x.length;
-
-        // Slopes entre pontos consecutivos
         double[] slopes = new double[n - 1];
 
         for (int i = 0; i < n - 1; i++) {
@@ -47,8 +39,6 @@ public class InterpLUT {
 
             slopes[i] = (y[i + 1] - y[i]) / h;
         }
-
-        // Tangentes em cada ponto
         double[] m = new double[n];
 
         m[0] = slopes[0];
@@ -58,8 +48,6 @@ public class InterpLUT {
         }
 
         m[n - 1] = slopes[n - 2];
-
-        // Ajusta as tangentes para preservar monotonicidade
         for (int i = 0; i < n - 1; i++) {
 
             if (slopes[i] == 0) {
@@ -83,8 +71,6 @@ public class InterpLUT {
                 }
             }
         }
-
-        // Guarda as tangentes associadas a cada X
         for (int i = 0; i < n; i++) {
             tangents.put(x[i], m[i]);
         }
@@ -101,30 +87,21 @@ public class InterpLUT {
                     "Call createLUT() after adding the control points"
             );
         }
-
-        // NaN
         if (Double.isNaN(input)) {
             return input;
         }
 
-        // Abaixo do menor valor
         if (input <= table.firstKey()) {
             return table.firstEntry().getValue();
         }
-
-        // Acima do maior valor
         if (input >= table.lastKey()) {
             return table.lastEntry().getValue();
         }
-
-        // Encontra os dois pontos que cercam o input
         Map.Entry<Double, Double> lower =
                 table.floorEntry(input);
 
         Map.Entry<Double, Double> upper =
                 table.ceilingEntry(input);
-
-        // Entrada exatamente em um ponto existente
         if (lower.getKey().equals(upper.getKey())) {
             return lower.getValue();
         }
@@ -136,14 +113,8 @@ public class InterpLUT {
         double x2 = upper.getKey();
         double y2 = upper.getValue();
         double m2 = tangents.get(x2);
-
-        // Distância entre os pontos
         double h = x2 - x1;
-
-        // Posição normalizada entre 0 e 1
         double t = (input - x1) / h;
-
-        // Interpolação cúbica de Hermite
         return (y1 * (1 + 2 * t) + h * m1 * t)
                 * (1 - t) * (1 - t)
 

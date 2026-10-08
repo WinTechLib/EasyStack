@@ -4,11 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import dev.easyfamily.easystack.trajectory.constraint.TrajectoryConstraint;
-
-/**
- * Configuração da geração. Unidades livres (ex.: polegadas, pol/s, pol/s²).
- * As tolerâncias da spline têm padrão em polegadas; ajuste com setSplineTolerance se usar outra unidade.
- */
 public class TrajectoryConfig {
     private final double maxVelocity;
     private final double maxAcceleration;

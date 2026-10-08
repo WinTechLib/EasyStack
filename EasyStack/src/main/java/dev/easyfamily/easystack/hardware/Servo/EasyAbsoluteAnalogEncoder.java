@@ -23,8 +23,8 @@ public class EasyAbsoluteAnalogEncoder {
         this.fullRotation = unit == AngleUnit.RADIANS ? 2 * Math.PI : 360.0;
     }
 
-    public double getAngle(AngleUnit outraUnidade) {
-        return outraUnidade.fromUnit(unit, getAngle());
+    public double getAngle(AngleUnit anotherUnity) {
+        return anotherUnity.fromUnit(unit, getAngle());
     }
 
     public double getAngleDegrees() {

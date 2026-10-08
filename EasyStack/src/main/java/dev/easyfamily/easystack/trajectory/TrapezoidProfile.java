@@ -1,9 +1,4 @@
 package dev.easyfamily.easystack.trajectory;
-
-/**
- * Perfil de movimento trapezoidal 1D (aceleração -> cruzeiro -> desaceleração).
- * Aceita velocidade inicial/final diferente de zero. Imutável: calculate(t) é puro.
- */
 public class TrapezoidProfile {
     public static class Constraints {
         public final double maxVelocity;
@@ -36,7 +31,7 @@ public class TrapezoidProfile {
 
     private final int direction;
     private final double maxVelocity, maxAcceleration;
-    private final double curPos, curVel, goalPos, goalVel; // já no sentido "positivo"
+    private final double curPos, curVel, goalPos, goalVel;
     private final double endAccel, endFullSpeed, endDeccel;
 
     public TrapezoidProfile(Constraints constraints, State goal) {
@@ -52,8 +47,6 @@ public class TrapezoidProfile {
         this.curVel = Math.min(initial.velocity * direction, maxVelocity);
         this.goalPos = goal.position * direction;
         this.goalVel = goal.velocity * direction;
-
-        // trata perfil "truncado" (velocidade inicial/final != 0)
         double cutoffBegin = curVel / maxAcceleration;
         double cutoffDistBegin = cutoffBegin * cutoffBegin * maxAcceleration / 2.0;
         double cutoffEnd = goalVel / maxAcceleration;
@@ -63,7 +56,7 @@ public class TrapezoidProfile {
         double accelerationTime = maxVelocity / maxAcceleration;
         double fullSpeedDist = fullTrapezoidDist - accelerationTime * accelerationTime * maxAcceleration;
 
-        if (fullSpeedDist < 0) { // nunca chega na velocidade máxima
+        if (fullSpeedDist < 0) {
             accelerationTime = Math.sqrt(fullTrapezoidDist / maxAcceleration);
             fullSpeedDist = 0;
         }

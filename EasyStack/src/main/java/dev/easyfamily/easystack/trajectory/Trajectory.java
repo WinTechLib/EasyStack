@@ -6,10 +6,7 @@ import java.util.List;
 
 import dev.easyfamily.easystack.geometry.Pose2d;
 import dev.easyfamily.easystack.geometry.Transform2d;
-
-/** Trajetória amostrada no tempo: lista de estados (t, velocidade, aceleração, pose, curvatura). */
 public class Trajectory {
-    /** pose.rotation = direção do deslocamento (não é o heading do robô holonômico). */
     public static class State {
         public double time;
         public double velocity;
@@ -52,7 +49,7 @@ public class Trajectory {
     private final double totalTime;
 
     public Trajectory(List<State> states) {
-        if (states.isEmpty()) throw new IllegalArgumentException("A trajetória precisa de pelo menos 1 estado.");
+        if (states.isEmpty()) throw new IllegalArgumentException("The trajectory needs atleast 1 state");
         this.states = Collections.unmodifiableList(new ArrayList<>(states));
         this.totalTime = states.get(states.size() - 1).time;
     }
@@ -63,7 +60,6 @@ public class Trajectory {
 
     public Pose2d getInitialPose() { return states.get(0).pose; }
 
-    /** Estado no instante t (interpolado entre as amostras). */
     public State sample(double time) {
         if (time <= states.get(0).time) return states.get(0);
         if (time >= totalTime) return states.get(states.size() - 1);

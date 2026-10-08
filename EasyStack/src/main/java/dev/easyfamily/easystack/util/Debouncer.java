@@ -1,6 +1,4 @@
 package dev.easyfamily.easystack.util;
-
-/** Só aceita a mudança de um boolean depois de ficar estável por X ms (anti-ruído de sensor/botão). */
 public class Debouncer {
     public enum Type { RISING, FALLING, BOTH }
 

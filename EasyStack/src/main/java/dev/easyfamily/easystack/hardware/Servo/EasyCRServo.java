@@ -16,55 +16,52 @@ import dev.easyfamily.easystack.util.LowPassFilter;
 
 public class EasyCRServo implements dev.easyfamily.easystack.controllable.EasyCRServo, EasyRpmControllable {
     private final CRServoImplEx servo;
-    private final String nome;
-
+    private final String name;
     private double cachingTolerance = 0.005;
-    private double ultimaPotencia = Double.NaN;
-    private boolean invertido = false;
+    private double lastPower = Double.NaN;
+    private boolean inverted = false;
 
     private EasyAbsoluteAnalogEncoder encoder;
     private EasyPIDController pid;
     private FFController ff;
-    private double alvo = Double.NaN;
-    private double toleranciaAlvo;
-    private boolean emPerfil = false;
-
-
+    private double target = Double.NaN;
+    private double targetTolerance;
+    private boolean inPerfil = false;
     private double maxRpm = 0.0;
-    private double potenciaMinima = 0.0;
+    private double minimumPower = 0.0;
     private EasyPIDController velPid;
-    private double rpmAlvo = Double.NaN;
-    private double toleranciaRpm = 10.0;
-    private double sinalEncoder = 1.0;
+    private double targetRpm = Double.NaN;
+    private double toleranceRpm = 10.0;
+    private double encoderSignal = 1.0;
 
-    private double rpmMedido = Double.NaN;
-    private double ultimoAngulo;
-    private long ultimoTempo;
-    private boolean amostraValida = false;
-    private LowPassFilter filtroRpm = new LowPassFilter(0.05);
+    private double measuredRpm = Double.NaN;
+    private double lastAngle;
+    private long lastTimer;
+    private boolean validSample = false;
+    private LowPassFilter rpmFilter = new LowPassFilter(0.05);
 
     public EasyCRServo(HardwareMap hwMap, String nome) {
         this.servo = hwMap.get(CRServoImplEx.class, nome);
-        this.nome = nome;
+        this.name = nome;
     }
 
     @Override
     public EasyCRServo setInverted(boolean inverted) {
-        this.invertido = inverted;
+        this.inverted = inverted;
         servo.setDirection(inverted ? DcMotorSimple.Direction.REVERSE : DcMotorSimple.Direction.FORWARD);
-        ultimaPotencia = Double.NaN;
+        lastPower = Double.NaN;
         return this;
     }
 
     @Override
     public EasyCRServo reverse() {
-        return setInverted(!invertido);
+        return setInverted(!inverted);
     }
 
     @Override
     public EasyCRServo setPwmRange(PwmControl.PwmRange range) {
         servo.setPwmRange(range);
-        ultimaPotencia = Double.NaN;
+        lastPower = Double.NaN;
         return this;
     }
 
@@ -74,11 +71,11 @@ public class EasyCRServo implements dev.easyfamily.easystack.controllable.EasyCR
         return this;
     }
 
-    public EasyCRServo setPositionalControl(EasyAbsoluteAnalogEncoder encoder, PIDCoefficients coefficients, double toleranciaAlvo) {
+    public EasyCRServo setPositionalControl(EasyAbsoluteAnalogEncoder encoder, PIDCoefficients coefficients, double targetTolerance) {
         this.encoder = encoder;
-        this.amostraValida = false;
+        this.validSample = false;
         this.pid = new EasyPIDController(coefficients);
-        this.toleranciaAlvo = toleranciaAlvo;
+        this.targetTolerance = targetTolerance;
         return this;
     }
 
@@ -95,95 +92,95 @@ public class EasyCRServo implements dev.easyfamily.easystack.controllable.EasyCR
 
 
     public EasyCRServo setMaxRpm(double rpm) {
-        if (rpm <= 0) throw new IllegalArgumentException("maxRpm deve ser > 0. Servo: " + nome);
+        if (rpm <= 0) throw new IllegalArgumentException("maxRpm needs to be > 0. Servo: " + name);
         this.maxRpm = rpm;
         return this;
     }
 
-    public EasyCRServo setMinPower(double potenciaMinima) {
-        this.potenciaMinima = Math.max(0.0, Math.min(0.95, potenciaMinima));
+    public EasyCRServo setMinPower(double minimumPower) {
+        this.minimumPower = Math.max(0.0, Math.min(0.95, minimumPower));
         return this;
     }
 
     public EasyCRServo setVelocityControl(EasyAbsoluteAnalogEncoder encoder, PIDCoefficients coefficients) {
         this.encoder = encoder;
-        this.amostraValida = false;
+        this.validSample = false;
         this.velPid = new EasyPIDController(coefficients);
         return this;
     }
     public EasyCRServo setVelocityFilter(double timeConstantSeconds) {
-        this.filtroRpm = new LowPassFilter(timeConstantSeconds);
+        this.rpmFilter = new LowPassFilter(timeConstantSeconds);
         return this;
     }
 
     public EasyCRServo setEncoderInverted(boolean inverted) {
-        this.sinalEncoder = inverted ? -1.0 : 1.0;
+        this.encoderSignal = inverted ? -1.0 : 1.0;
         return this;
     }
 
     public EasyCRServo setRpmTolerance(double rpm) {
-        this.toleranciaRpm = Math.abs(rpm);
+        this.toleranceRpm = Math.abs(rpm);
         return this;
     }
 
 
     public void setTargetRpm(double rpm) {
-        exigirModeloVelocidade();
-        boolean novoModo = Double.isNaN(rpmAlvo);
-        rpmAlvo = Math.max(-maxRpm, Math.min(maxRpm, rpm));
-        alvo = Double.NaN;
+        requireVelocityModel();
+        boolean novoModo = Double.isNaN(targetRpm);
+        targetRpm = Math.max(-maxRpm, Math.min(maxRpm, rpm));
+        target = Double.NaN;
         if (novoModo && velPid != null) velPid.reset();
-        escrever(rpmParaPotencia(rpmAlvo));
+        write(rpmToPower(targetRpm));
     }
 
 
-    public void setTargetAngularVelocity(double velocidade, AngleUnit unidade) {
-        setTargetRpm(unidade.toRadians(velocidade) * 60.0 / (2.0 * Math.PI));
+    public void setTargetAngularVelocity(double velocity, AngleUnit unity) {
+        setTargetRpm(unity.toRadians(velocity) * 60.0 / (2.0 * Math.PI));
     }
 
     public double rpmToPower(double rpm) {
-        exigirModeloVelocidade();
-        return rpmParaPotencia(rpm);
+        requireVelocityModel();
+        return rpmToPower(rpm);
     }
 
     public double powerToRpm(double potencia) {
-        exigirModeloVelocidade();
-        return potenciaParaRpm(potencia);
+        requireVelocityModel();
+        return powerToRpm(potencia);
     }
 
     public double getMeasuredRpm() {
-        amostrarVelocidade();
-        return encoder == null ? Double.NaN : rpmMedido;
+        VelocitySample();
+        return encoder == null ? Double.NaN : measuredRpm;
     }
     public double getEstimatedRpm() {
         if (maxRpm <= 0) return Double.NaN;
-        return potenciaParaRpm(getPower());
+        return powerToRpm(getPower());
     }
     public double getRpm() {
         double m = getMeasuredRpm();
         return Double.isNaN(m) ? getEstimatedRpm() : m;
     }
 
-    public double getAngularVelocity(AngleUnit unidade) {
+    public double getAngularVelocity(AngleUnit unity) {
         double radPorSeg = getRpm() * 2.0 * Math.PI / 60.0;
-        return unidade.fromRadians(radPorSeg);
+        return unity.fromRadians(radPorSeg);
     }
 
-    public double getTargetRpm() { return rpmAlvo; }
+    public double getTargetRpm() { return targetRpm; }
 
     public double getMaxRpm() { return maxRpm; }
     public boolean isAtTargetRpm() {
-        if (Double.isNaN(rpmAlvo)) return false;
+        if (Double.isNaN(targetRpm)) return false;
         if (encoder == null) return true;
         double m = getMeasuredRpm();
-        return !Double.isNaN(m) && Math.abs(rpmAlvo - m) <= toleranciaRpm;
+        return !Double.isNaN(m) && Math.abs(targetRpm - m) <= toleranceRpm;
     }
 
     @Override
     public void setPower(double potencia) {
-        alvo = Double.NaN;
-        rpmAlvo = Double.NaN;
-        escrever(potencia);
+        target = Double.NaN;
+        targetRpm = Double.NaN;
+        write(potencia);
     }
 
     @Override
@@ -191,7 +188,7 @@ public class EasyCRServo implements dev.easyfamily.easystack.controllable.EasyCR
         setPower(0.0);
     }
 
-    private boolean mesmoAngulo(double a, double b) {
+    private boolean sameAngle(double a, double b) {
         double diferenca = (a - b) % encoder.getFullRotation();
 
         if (diferenca > encoder.getFullRotation() / 2.0) {
@@ -206,50 +203,50 @@ public class EasyCRServo implements dev.easyfamily.easystack.controllable.EasyCR
     }
 
     @Override
-    public void setTargetAngle(double angulo) {
-        exigirPosicional();
+    public void setTargetAngle(double angle) {
+        requirePositional();
 
-        double novoAlvo = normalizar(angulo);
+        double novoAlvo = normalize(angle);
 
-        if (Double.isNaN(alvo) || !mesmoAngulo(alvo, novoAlvo)) {
-            alvo = novoAlvo;
+        if (Double.isNaN(target) || !sameAngle(target, novoAlvo)) {
+            target = novoAlvo;
             pid.reset();
         }
     }
 
     @Override
     public void update() {
-        amostrarVelocidade();
-        if (!Double.isNaN(rpmAlvo)) {
-            executarVelocidade();
+        VelocitySample();
+        if (!Double.isNaN(targetRpm)) {
+            executeVelocity();
             return;
         }
-        executar(false, 0.0, 0.0);
+        execute(false, 0.0, 0.0);
     }
 
 
     @Override
     public void update(double positionRef, double velocityRef, double accelerationRef) {
-        exigirPosicional();
-        amostrarVelocidade();
-        rpmAlvo = Double.NaN;
-        alvo = normalizar(positionRef);
-        executar(true, velocityRef, accelerationRef);
+        requirePositional();
+        VelocitySample();
+        targetRpm = Double.NaN;
+        target = normalize(positionRef);
+        execute(true, velocityRef, accelerationRef);
     }
 
-    private void executar(boolean perfil, double vRef, double aRef) {
-        if (encoder == null || pid == null || Double.isNaN(alvo)) return;
+    private void execute(boolean perfil, double vRef, double aRef) {
+        if (encoder == null || pid == null || Double.isNaN(target)) return;
 
-        if (perfil != emPerfil) {
+        if (perfil != inPerfil) {
             pid.reset();
-            emPerfil = perfil;
+            inPerfil = perfil;
         }
 
-        double e = erro();
+        double e = error();
 
-        if (!perfil && Math.abs(e) <= toleranciaAlvo) {
+        if (!perfil && Math.abs(e) <= targetTolerance) {
             pid.reset();
-            escrever(0.0);
+            write(0.0);
             return;
         }
 
@@ -261,49 +258,49 @@ public class EasyCRServo implements dev.easyfamily.easystack.controllable.EasyCR
             }
         }
 
-        escrever(pid.calculate(e, 0.0) + ffOut);
+        write(pid.calculate(e, 0.0) + ffOut);
     }
 
-    private void executarVelocidade() {
-        double base = rpmParaPotencia(rpmAlvo);
+    private void executeVelocity() {
+        double base = rpmToPower(targetRpm);
 
-        if (velPid == null || encoder == null) { // malha aberta
-            escrever(base);
+        if (velPid == null || encoder == null) {
+            write(base);
             return;
         }
-        if (rpmAlvo == 0.0) {
+        if (targetRpm == 0.0) {
             velPid.reset();
-            escrever(0.0);
+            write(0.0);
             return;
         }
-        if (Double.isNaN(rpmMedido)) { // ainda sem medida válida
-            escrever(base);
+        if (Double.isNaN(measuredRpm)) {
+            write(base);
             return;
         }
-        double e = (rpmAlvo - rpmMedido) / maxRpm;
-        escrever(base + velPid.calculate(e, 0.0));
+        double e = (targetRpm - measuredRpm) / maxRpm;
+        write(base + velPid.calculate(e, 0.0));
     }
 
     @Override
     public boolean isAtTarget() {
-        return encoder != null && !Double.isNaN(alvo) && Math.abs(erro()) <= toleranciaAlvo;
+        return encoder != null && !Double.isNaN(target) && Math.abs(error()) <= targetTolerance;
     }
 
     @Override
     public double getPower() {
-        return Double.isNaN(ultimaPotencia) ? servo.getPower() : ultimaPotencia;
+        return Double.isNaN(lastPower) ? servo.getPower() : lastPower;
     }
 
     @Override
     public double getAngle() {
-        if (encoder == null) throw new IllegalStateException("Sem encoder. Servo: " + nome);
+        if (encoder == null) throw new IllegalStateException("Sem encoder. Servo: " + name);
         return encoder.getAngle();
     }
 
 
     @Override
     public boolean isInverted() {
-        return invertido;
+        return inverted;
     }
 
     @Override
@@ -323,85 +320,85 @@ public class EasyCRServo implements dev.easyfamily.easystack.controllable.EasyCR
 
     @Override
     public String getDeviceType() {
-        return "EzCRServo: " + nome;
+        return "EzCRServo: " + name;
     }
 
     public CRServoImplEx getNativeServo() {
         return servo;
     }
 
-    void escrever(double potencia) {
-        double p = Math.max(-1.0, Math.min(1.0, potencia));
-        boolean paraDeParar = p == 0.0 && ultimaPotencia != 0.0;
-        if (!Double.isNaN(ultimaPotencia) && Math.abs(p - ultimaPotencia) <= cachingTolerance && !paraDeParar) {
+    void write(double power) {
+        double p = Math.max(-1.0, Math.min(1.0, power));
+        boolean paraDeParar = p == 0.0 && lastPower != 0.0;
+        if (!Double.isNaN(lastPower) && Math.abs(p - lastPower) <= cachingTolerance && !paraDeParar) {
             return;
         }
         servo.setPower(p);
-        ultimaPotencia = p;
+        lastPower = p;
     }
 
-    private void exigirPosicional() {
+    private void requirePositional() {
         if (encoder == null || pid == null) {
-            throw new IllegalStateException("Configure setPositionalControl() antes. Servo: " + nome);
+            throw new IllegalStateException("Configure setPositionalControl() before. Servo: " + name);
         }
     }
 
-    private void exigirModeloVelocidade() {
+    private void requireVelocityModel() {
         if (maxRpm <= 0) {
-            throw new IllegalStateException("Configure setMaxRpm() antes. Servo: " + nome);
+            throw new IllegalStateException("Configure setMaxRpm() before. Servo: " + name);
         }
     }
 
-    private double rpmParaPotencia(double rpm) {
+    private double RpmToPower(double rpm) {
         if (rpm == 0.0) return 0.0;
         double fracao = Math.min(1.0, Math.abs(rpm) / maxRpm);
-        return Math.signum(rpm) * (potenciaMinima + (1.0 - potenciaMinima) * fracao);
+        return Math.signum(rpm) * (minimumPower + (1.0 - minimumPower) * fracao);
     }
 
-    private double potenciaParaRpm(double potencia) {
+    private double PowerToRpm(double potencia) {
         double a = Math.abs(potencia);
-        if (a <= potenciaMinima) return 0.0;
-        return Math.signum(potencia) * (a - potenciaMinima) / (1.0 - potenciaMinima) * maxRpm;
+        if (a <= minimumPower) return 0.0;
+        return Math.signum(potencia) * (a - minimumPower) / (1.0 - minimumPower) * maxRpm;
     }
-    private void amostrarVelocidade() {
+    private void VelocitySample() {
         if (encoder == null) return;
 
         long agora = System.nanoTime();
-        double angulo = encoder.getAngle();
+        double angle = encoder.getAngle();
 
-        if (!amostraValida) {
-            ultimoAngulo = angulo;
-            ultimoTempo = agora;
-            amostraValida = true;
-            filtroRpm.reset();
-            rpmMedido = Double.NaN;
+        if (!validSample) {
+            lastAngle = angle;
+            lastTimer = agora;
+            validSample = true;
+            rpmFilter.reset();
+            measuredRpm = Double.NaN;
             return;
         }
 
-        double dt = (agora - ultimoTempo) / 1e9;
+        double dt = (agora - lastTimer) / 1e9;
         if (dt < 0.005) return;
 
         double volta = encoder.getFullRotation();
-        double d = (angulo - ultimoAngulo) % volta;
+        double d = (angle - lastAngle) % volta;
         if (d > volta / 2) d -= volta;
         if (d <= -volta / 2) d += volta;
 
-        double bruto = sinalEncoder * (d / volta) / dt * 60.0;
-        rpmMedido = filtroRpm.calculate(bruto, dt);
+        double bruto = encoderSignal * (d / volta) / dt * 60.0;
+        measuredRpm = rpmFilter.calculate(bruto, dt);
 
-        ultimoAngulo = angulo;
-        ultimoTempo = agora;
+        lastAngle = angle;
+        lastTimer = agora;
     }
 
-    private double erro() {
+    private double error() {
         double volta = encoder.getFullRotation();
-        double e = (alvo - encoder.getAngle()) % volta;
+        double e = (target - encoder.getAngle()) % volta;
         if (e > volta / 2) e -= volta;
         if (e <= -volta / 2) e += volta;
         return e;
     }
 
-    private double normalizar(double angulo) {
+    private double normalize(double angulo) {
         double volta = encoder.getFullRotation();
         double a = angulo % volta;
         return a < 0 ? a + volta : a;

@@ -2,20 +2,14 @@ package dev.easyfamily.easystack.spline;
 
 import dev.easyfamily.easystack.geometry.Pose2d;
 import dev.easyfamily.easystack.geometry.Rotation2d;
-
-/** Spline quíntica de Hermite em x(t), y(t), t em [0, 1]. Condições: posição, 1ª e 2ª derivadas nas pontas. */
 public final class QuinticHermiteSpline {
-    // coeficientes de t^5 .. t^0
+
     private final double[] xc;
     private final double[] yc;
-
-    /** Cada array = {valor, derivada, segunda derivada}. */
     public QuinticHermiteSpline(double[] xInitial, double[] xFinal, double[] yInitial, double[] yFinal) {
         this.xc = coefficients(xInitial, xFinal);
         this.yc = coefficients(yInitial, yFinal);
     }
-
-    /** Spline entre duas poses; o heading de cada pose define a tangente. */
     public static QuinticHermiteSpline fromPoses(Pose2d p0, Pose2d p1) {
         double scale = 1.2 * p0.getTranslation().getDistance(p1.getTranslation());
         Rotation2d r0 = p0.getRotation(), r1 = p1.getRotation();

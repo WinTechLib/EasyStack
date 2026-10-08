@@ -7,7 +7,7 @@ import java.util.List;
 
 import dev.easyfamily.easystack.geometry.Twist2d;
 
-/** Discretiza uma spline em pontos, subdividindo até o erro (dx, dy, dtheta) ficar abaixo das tolerâncias. */
+
 public final class SplineParameterizer {
     private static final int MAX_ITERATIONS = 5000;
 
@@ -37,7 +37,7 @@ public final class SplineParameterizer {
             }
 
             if (++iterations >= MAX_ITERATIONS) {
-                throw new IllegalStateException("Não foi possível parametrizar a spline (tolerâncias muito pequenas?).");
+                throw new IllegalStateException("It was not possible to parameterize the spline. (small tolerances?).");
             }
         }
         return points;

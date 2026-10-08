@@ -5,11 +5,6 @@ import java.util.List;
 
 import dev.easyfamily.easystack.spline.PoseWithCurvature;
 import dev.easyfamily.easystack.trajectory.constraint.TrajectoryConstraint;
-
-/**
- * Parametrização de tempo: transforma uma lista de pontos geométricos em uma trajetória no tempo,
- * respeitando velocidade/aceleração máximas e as restrições (passe para frente + passe para trás).
- */
 public final class TrajectoryParameterizer {
     private TrajectoryParameterizer() {}
 
@@ -39,8 +34,6 @@ public final class TrajectoryParameterizer {
                                               boolean reversed) {
         List<ConstrainedState> cs = new ArrayList<>(points.size());
         ConstrainedState predecessor = new ConstrainedState(points.get(0), 0.0, startVelocity, -maxAcceleration, maxAcceleration);
-
-        // ---- passe para frente ----
         for (int i = 0; i < points.size(); i++) {
             ConstrainedState state = new ConstrainedState();
             cs.add(state);
@@ -84,11 +77,9 @@ public final class TrajectoryParameterizer {
         ConstrainedState last = cs.get(cs.size() - 1);
         ConstrainedState successor = new ConstrainedState(points.get(points.size() - 1), last.distance,
                 endVelocity, -maxAcceleration, maxAcceleration);
-
-        // ---- passe para trás ----
         for (int i = cs.size() - 1; i >= 0; i--) {
             ConstrainedState state = cs.get(i);
-            double ds = state.distance - successor.distance; // negativo
+            double ds = state.distance - successor.distance;
 
             while (true) {
                 double newMaxVelocity = Math.sqrt(successor.maxVelocity * successor.maxVelocity
@@ -113,8 +104,6 @@ public final class TrajectoryParameterizer {
             }
             successor = state;
         }
-
-        // ---- integra no tempo ----
         List<Trajectory.State> states = new ArrayList<>(cs.size());
         double time = 0.0, distance = 0.0, velocity = 0.0;
 
@@ -131,8 +120,8 @@ public final class TrajectoryParameterizer {
                 } else if (Math.abs(velocity) > 1e-6) {
                     dt = ds / velocity;
                 } else {
-                    throw new IllegalStateException("Falha na parametrização de tempo no ponto " + i
-                            + " (velocidade 0 e aceleração 0). Verifique as restrições.");
+                    throw new IllegalStateException("Time parameterization failure at the point" + i
+                            + " (velocity 0 and aceleration 0). verify the restrictions.");
                 }
             }
 
@@ -153,7 +142,7 @@ public final class TrajectoryParameterizer {
             TrajectoryConstraint.MinMax mm = c.getMinMaxAcceleration(state.pose.pose, state.pose.curvature,
                     state.maxVelocity * factor);
             if (mm.min > mm.max) {
-                throw new IllegalStateException("Restrição inválida: aceleração mínima maior que a máxima.");
+                throw new IllegalStateException("Invalid constraint: minimum acceleration greater than maximum acceleration.");
             }
             state.minAcceleration = Math.max(state.minAcceleration, reverse ? -mm.max : mm.min);
             state.maxAcceleration = Math.min(state.maxAcceleration, reverse ? -mm.min : mm.max);

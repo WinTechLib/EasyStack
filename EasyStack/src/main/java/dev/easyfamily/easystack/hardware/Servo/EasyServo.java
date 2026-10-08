@@ -48,20 +48,17 @@ public class EasyServo implements dev.easyfamily.easystack.controllable.EasyServ
         resetarCache();
         return this;
     }
-
     @Override
     public EasyServo setAngleRange(double degrees) {
         if (degrees <= 0) throw new IllegalArgumentException("Range deve ser > 0");
         this.rangeGraus = degrees;
         return this;
     }
-
     @Override
     public EasyServo setCachingTolerance(double tolerance) {
         this.cachingTolerance = Math.max(0.0, tolerance);
         return this;
     }
-
     @Override
     public EasyServo setSpeed(double positionPerSecond) {
         this.velocidade = positionPerSecond;
