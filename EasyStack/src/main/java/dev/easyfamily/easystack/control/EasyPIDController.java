@@ -1,7 +1,5 @@
 package dev.easyfamily.easystack.control;
 
-import com.qualcomm.robotcore.util.ElapsedTime;
-
 import dev.easyfamily.easystack.controllable.EasyController;
 
 public class EasyPIDController implements EasyController {
@@ -10,11 +8,15 @@ public class EasyPIDController implements EasyController {
     private double kD;
 
     private double targetPosition = 0.0;
-    private double lastError = 0.0;
+    private double error = 0.0;
+    private double tolerance = 0.0;
+
+    private double lastMeasurement = 0.0;
     private double integralSum = 0.0;
     private double maxIntegralSum = 0.0;
 
-    private final ElapsedTime timer;
+    private long lastTime = 0L;
+    private boolean first = true;
 
     public EasyPIDController(PIDCoefficients coefficients) {
         this(coefficients.kP, coefficients.kI, coefficients.kD);
@@ -24,7 +26,6 @@ public class EasyPIDController implements EasyController {
         this.kP = kP;
         this.kI = kI;
         this.kD = kD;
-        this.timer = new ElapsedTime();
     }
 
     public EasyPIDController setPID(double kP, double kI, double kD) {
@@ -34,8 +35,17 @@ public class EasyPIDController implements EasyController {
         return this;
     }
 
+    public EasyPIDController setPID(PIDCoefficients coefficients) {
+        return setPID(coefficients.kP, coefficients.kI, coefficients.kD);
+    }
+
     public EasyPIDController setMaxIntegralSum(double max) {
-        this.maxIntegralSum = max;
+        this.maxIntegralSum = Math.abs(max);
+        return this;
+    }
+
+    public EasyPIDController setTolerance(double tolerance) {
+        this.tolerance = Math.abs(tolerance);
         return this;
     }
 
@@ -49,25 +59,35 @@ public class EasyPIDController implements EasyController {
         return targetPosition;
     }
 
+    public double getError() {
+        return error;
+    }
+
+    public boolean atTarget() {
+        return Math.abs(error) <= tolerance;
+    }
+
     @Override
     public double calculate(double currentPosition) {
-        double error = targetPosition - currentPosition;
-        double dt = timer.seconds();
+        error = targetPosition - currentPosition;
 
-        if (dt == 0.0) {
-            dt = 1e-6;
+        long now = System.nanoTime();
+        double dt = first ? 0.0 : (now - lastTime) / 1e9;
+        double derivative = 0.0;
+
+        if (!first && dt > 0.0) {
+            integralSum += error * dt;
+
+            if (maxIntegralSum > 0) {
+                integralSum = Math.max(-maxIntegralSum, Math.min(integralSum, maxIntegralSum));
+            }
+
+            derivative = -(currentPosition - lastMeasurement) / dt;
         }
 
-        integralSum += error * dt;
-
-        if (maxIntegralSum > 0) {
-            integralSum = Math.max(-maxIntegralSum, Math.min(integralSum, maxIntegralSum));
-        }
-
-        double derivative = (error - lastError) / dt;
-
-        timer.reset();
-        lastError = error;
+        lastTime = now;
+        lastMeasurement = currentPosition;
+        first = false;
 
         return (kP * error) + (kI * integralSum) + (kD * derivative);
     }
@@ -80,8 +100,10 @@ public class EasyPIDController implements EasyController {
 
     @Override
     public void reset() {
-        lastError = 0.0;
         integralSum = 0.0;
-        timer.reset();
+        error = 0.0;
+        lastMeasurement = 0.0;
+        lastTime = 0L;
+        first = true;
     }
 }

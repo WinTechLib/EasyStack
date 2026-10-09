@@ -12,6 +12,10 @@ public class EasyMotor implements EasyControllable {
 
     private final DcMotorEx motor;
 
+    private EasyMotorType type;
+    private double cprOverride = Double.NaN;
+    private double maxRPMOverride = Double.NaN;
+
     private double direction = 1.0;
     private double positionOffset = 0.0;
 
@@ -19,19 +23,96 @@ public class EasyMotor implements EasyControllable {
     private double cacheTolerance;
 
     private double lastVelocity = 0;
+    private double lastAcceleration = 0;
     private long lastVelocityTime = System.nanoTime();
 
     public EasyMotor(HardwareMap hardwareMap, String name) {
-        this(hardwareMap, name, 0.01);
+        this(hardwareMap, name, EasyMotorType.CONFIG, 0.01);
+    }
+
+    public EasyMotor(HardwareMap hardwareMap, String name, EasyMotorType type) {
+        this(hardwareMap, name, type, 0.01);
+    }
+
+    public EasyMotor(HardwareMap hardwareMap, String name, double cacheTolerance) {
+        this(hardwareMap, name, EasyMotorType.CONFIG, cacheTolerance);
     }
 
     public EasyMotor(
             HardwareMap hardwareMap,
             String name,
+            EasyMotorType type,
             double cacheTolerance
     ) {
         this.motor = hardwareMap.get(DcMotorEx.class, name);
+        this.type = type == null ? EasyMotorType.CONFIG : type;
         this.cacheTolerance = Math.max(0.0, cacheTolerance);
+
+        motor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+    }
+
+    public EasyMotor setType(EasyMotorType type) {
+        this.type = type == null ? EasyMotorType.CONFIG : type;
+        cprOverride = Double.NaN;
+        maxRPMOverride = Double.NaN;
+        return this;
+    }
+
+    public EasyMotorType getType() {
+        return type;
+    }
+
+    public EasyMotor setCPR(double cpr) {
+        cprOverride = cpr;
+        return this;
+    }
+
+    public EasyMotor setMaxRPM(double maxRPM) {
+        maxRPMOverride = maxRPM;
+        return this;
+    }
+
+    public double getCPR() {
+        if (!Double.isNaN(cprOverride)) {
+            return cprOverride;
+        }
+
+        if (!type.isConfig()) {
+            return type.getCPR();
+        }
+
+        return motor.getMotorType().getTicksPerRev();
+    }
+
+    public double getMaxRPM() {
+        if (!Double.isNaN(maxRPMOverride)) {
+            return maxRPMOverride;
+        }
+
+        if (!type.isConfig()) {
+            return type.getMaxRPM();
+        }
+
+        return motor.getMotorType().getMaxRPM();
+    }
+
+    public double getRPM() {
+        double cpr = getCPR();
+        return cpr <= 0 ? 0.0 : getVelocity() / cpr * 60.0;
+    }
+
+    public double getRotations() {
+        double cpr = getCPR();
+        return cpr <= 0 ? 0.0 : getPosition() / cpr;
+    }
+
+    public double getDegrees() {
+        return getRotations() * 360.0;
+    }
+
+    public double getSpeedPercent() {
+        double max = getMaxRPM();
+        return max <= 0 ? 0.0 : Math.abs(getRPM()) / max;
     }
 
     public double getRawPosition() {
@@ -48,9 +129,7 @@ public class EasyMotor implements EasyControllable {
     }
 
     public EasyMotor atPosition(double position) {
-        positionOffset =
-                getRawPosition() - (position * direction);
-
+        positionOffset = getRawPosition() - (position * direction);
         return this;
     }
 
@@ -62,6 +141,16 @@ public class EasyMotor implements EasyControllable {
         return zero();
     }
 
+    public EasyMotor stopAndResetEncoder() {
+        motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        motor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
+        positionOffset = 0.0;
+        lastPower = Double.NaN;
+
+        return this;
+    }
+
     public double getRawVelocity() {
         return motor.getVelocity();
     }
@@ -71,52 +160,56 @@ public class EasyMotor implements EasyControllable {
         return motor.getVelocity() * direction;
     }
 
+    public double getAcceleration() {
+        long now = System.nanoTime();
+        double dt = (now - lastVelocityTime) / 1e9;
+
+        if (dt < 0.005) {
+            return lastAcceleration;
+        }
+
+        double velocity = getVelocity();
+
+        lastAcceleration = (velocity - lastVelocity) / dt;
+        lastVelocity = velocity;
+        lastVelocityTime = now;
+
+        return lastAcceleration;
+    }
+
     @Override
     public void setPower(double power) {
+        power = Math.max(-1.0, Math.min(1.0, power));
 
-        double appliedPower =
-                power * direction;
+        double appliedPower = power * direction;
 
-        if (
+        boolean shouldWrite =
                 Double.isNaN(lastPower)
-                        || Math.abs(appliedPower - lastPower)
-                        > cacheTolerance
-        ) {
+                        || Math.abs(appliedPower - lastPower) > cacheTolerance
+                        || (appliedPower == 0.0 && lastPower != 0.0)
+                        || (Math.abs(appliedPower) == 1.0 && appliedPower != lastPower);
 
-            motor.setMode(
-                    DcMotor.RunMode.RUN_WITHOUT_ENCODER
-            );
-
+        if (shouldWrite) {
             motor.setPower(appliedPower);
-
             lastPower = appliedPower;
         }
     }
 
     @Override
     public double getPower() {
-        return lastPower;
+        return Double.isNaN(lastPower) ? 0.0 : lastPower * direction;
     }
 
-    /**
-     * Define a tolerância utilizada pelo caching de potência.
-     *
-     * O motor só recebe uma nova escrita quando a diferença
-     * entre a potência atual e a nova potência for maior que
-     * essa tolerância.
-     */
-    public EasyMotor setCachingTolerance(
-            double tolerance
-    ) {
-        cacheTolerance =
-                Math.max(0.0, tolerance);
-
+    public EasyMotor stop() {
+        setPower(0);
         return this;
     }
 
-    /**
-     * Retorna a tolerância atual do caching.
-     */
+    public EasyMotor setCachingTolerance(double tolerance) {
+        cacheTolerance = Math.max(0.0, tolerance);
+        return this;
+    }
+
     public double getCachingTolerance() {
         return cacheTolerance;
     }
@@ -131,101 +224,9 @@ public class EasyMotor implements EasyControllable {
         return reverse();
     }
 
-    public EasyMotor floatMode() {
-        motor.setZeroPowerBehavior(
-                DcMotor.ZeroPowerBehavior.FLOAT
-        );
-
-        return this;
-    }
-
-    public EasyMotor brakeMode() {
-        motor.setZeroPowerBehavior(
-                DcMotor.ZeroPowerBehavior.BRAKE
-        );
-
-        return this;
-    }
-
-    public DcMotorEx getMotor() {
-        return motor;
-    }
-
-    public EasyMotor stop() {
-        setPower(0);
-        return this;
-    }
-
-    public double getAcceleration() {
-
-        double velocity = getVelocity();
-
-        long now = System.nanoTime();
-
-        double dt =
-                (now - lastVelocityTime) / 1e9;
-
-        if (dt <= 0) {
-            return 0;
-        }
-
-        double acceleration =
-                (velocity - lastVelocity) / dt;
-
-        lastVelocity = velocity;
-        lastVelocityTime = now;
-
-        return acceleration;
-    }
-
-    public double getCurrentAlert(CurrentUnit unit) {
-        return motor.getCurrentAlert(unit);
-    }
-
-    public EasyMotor setCurrentAlert(
-            double current,
-            CurrentUnit unit
-    ) {
-        motor.setCurrentAlert(
-                current,
-                unit
-        );
-
-        return this;
-    }
-
-    public boolean isOverCurrent() {
-        return motor.isOverCurrent();
-    }
-
-    public double getCPR() {
-        return motor
-                .getMotorType()
-                .getTicksPerRev();
-    }
-
-    public double getMaxRPM() {
-        return motor
-                .getMotorType()
-                .getMaxRPM();
-    }
-
-    public double getRPM() {
-        return getVelocity()
-                / getCPR()
-                * 60.0;
-    }
-
-    public EasyMotor setInverted(
-            boolean inverted
-    ) {
-        direction =
-                inverted
-                        ? -1.0
-                        : 1.0;
-
+    public EasyMotor setInverted(boolean inverted) {
+        direction = inverted ? -1.0 : 1.0;
         lastPower = Double.NaN;
-
         return this;
     }
 
@@ -233,19 +234,34 @@ public class EasyMotor implements EasyControllable {
         return direction == -1.0;
     }
 
-    public EasyMotor stopAndResetEncoder() {
-
-        motor.setMode(
-                DcMotor.RunMode.STOP_AND_RESET_ENCODER
-        );
-
-        motor.setMode(
-                DcMotor.RunMode.RUN_WITHOUT_ENCODER
-        );
-
-        positionOffset = 0.0;
-        lastPower = Double.NaN;
-
+    public EasyMotor floatMode() {
+        motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
         return this;
+    }
+
+    public EasyMotor brakeMode() {
+        motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        return this;
+    }
+
+    public double getCurrent(CurrentUnit unit) {
+        return motor.getCurrent(unit);
+    }
+
+    public double getCurrentAlert(CurrentUnit unit) {
+        return motor.getCurrentAlert(unit);
+    }
+
+    public EasyMotor setCurrentAlert(double current, CurrentUnit unit) {
+        motor.setCurrentAlert(current, unit);
+        return this;
+    }
+
+    public boolean isOverCurrent() {
+        return motor.isOverCurrent();
+    }
+
+    public DcMotorEx getMotor() {
+        return motor;
     }
 }

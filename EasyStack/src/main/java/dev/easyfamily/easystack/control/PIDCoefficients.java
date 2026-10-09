@@ -2,12 +2,17 @@ package dev.easyfamily.easystack.control;
 
 public class PIDCoefficients {
 
-    public static double kP;
-    public static double kI;
-    public static double kD;
+    public double kP;
+    public double kI;
+    public double kD;
 
-    public PIDCoefficients(double kP, double kI, double kD) {
-        this.kP = kP; this.kI = kI; this.kD = kD;
+    public PIDCoefficients() {
+        this(0, 0, 0);
     }
 
+    public PIDCoefficients(double kP, double kI, double kD) {
+        this.kP = kP;
+        this.kI = kI;
+        this.kD = kD;
+    }
 }

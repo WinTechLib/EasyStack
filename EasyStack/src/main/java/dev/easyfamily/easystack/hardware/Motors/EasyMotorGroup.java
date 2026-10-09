@@ -1,5 +1,7 @@
 package dev.easyfamily.easystack.hardware.Motors;
 
+import java.util.Objects;
+
 import dev.easyfamily.easystack.controllable.EasyControllable;
 
 public class EasyMotorGroup implements EasyControllable {
@@ -11,8 +13,8 @@ public class EasyMotorGroup implements EasyControllable {
             EasyControllable leader,
             EasyControllable... followers
     ) {
-        this.leader = leader;
-        this.followers = followers;
+        this.leader = Objects.requireNonNull(leader, "The group leader cant be null");
+        this.followers = followers == null ? new EasyControllable[0] : followers;
     }
 
     @Override
@@ -22,6 +24,11 @@ public class EasyMotorGroup implements EasyControllable {
         for (EasyControllable follower : followers) {
             follower.setPower(power);
         }
+    }
+
+    public EasyMotorGroup stop() {
+        setPower(0);
+        return this;
     }
 
     @Override
@@ -41,5 +48,9 @@ public class EasyMotorGroup implements EasyControllable {
 
     public EasyControllable getLeader() {
         return leader;
+    }
+
+    public EasyControllable[] getFollowers() {
+        return followers.clone();
     }
 }
