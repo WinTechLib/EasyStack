@@ -321,11 +321,12 @@ public class EasyGamepad {
 
         private boolean toggled;
 
+
         private long debounceNanos = 50_000_000L;
-        private long lastPressTime = Long.MIN_VALUE;
+        private long lastPressTime;
+        private boolean hasPressedBefore = false;
 
         private void update(boolean input, long now) {
-
             previous = current;
             current = input;
 
@@ -333,11 +334,16 @@ public class EasyGamepad {
             released = false;
 
             if (current && !previous) {
+                boolean debouncePassed =
+                        !hasPressedBefore ||
+                                now - lastPressTime >= debounceNanos;
 
-                if (now - lastPressTime >= debounceNanos) {
+                if (debouncePassed) {
                     pressed = true;
                     toggled = !toggled;
+
                     lastPressTime = now;
+                    hasPressedBefore = true;
                 }
             }
 
