@@ -4,32 +4,29 @@ package org.firstinspires.ftc.teamcode.subsystems;
 import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.ServoImplEx;
 
 import dev.easyfamily.easystack.control.EasyPIDFController;
 import dev.easyfamily.easystack.hardware.Motors.EasyMotor;
+import dev.easyfamily.easystack.hardware.Motors.EasyMotorGroup;
 import dev.easyfamily.easystack.hardware.Motors.EasyMotorType;
 import dev.easyfamily.easystack.hardware.Servo.EasyServo;
 @TeleOp(name = "teste")
 
 public class motorTest extends LinearOpMode {
-    EasyMotor motor;
-    EasyPIDFController pidfController;
+    EasyMotor motor, motor1;
+    EasyMotorGroup motores;
     @Override
     public void runOpMode() throws InterruptedException {
-       double kp = 0.009;
-        double ki = 0;
-       double kd = 0;
-       double targetRpm = 150;
-
-        pidfController = new EasyPIDFController(kp, kd, ki, 0);
-        motor = new EasyMotor(hardwareMap,"motor", EasyMotorType.GOBILDA_312);
+        motor = new EasyMotor(hardwareMap,"motor", EasyMotorType.GOBILDA_312)
+                .stopAndResetEncoder();
+        motor1 = new EasyMotor(hardwareMap, "motor1", EasyMotorType.GOBILDA_312);
+        motores = new EasyMotorGroup(motor, motor1).crossCoupled(.5);
         waitForStart();
         while(opModeIsActive()){
-            double power =  pidfController.calculate(motor.getRPM(),targetRpm);
-            motor.setPower(power);
+            motor.setRPM(3500);
             telemetry.addData("current Pos", motor.getCurrentPosition());
             telemetry.addData("rpm", motor.getRPM());
-            telemetry.addData("error", pidfController.getError());
             telemetry.addData("rotations", motor.getRotations());
 
             telemetry.update();

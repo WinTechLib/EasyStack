@@ -249,7 +249,7 @@ public class SwerveModule {
             double motorCachingTolerance,
             double steeringCachingTolerance
     ) {
-        driveMotor.setCachingTolerance(
+        driveMotor.setPowerCacheTolerance(
                 motorCachingTolerance
         );
 
