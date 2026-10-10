@@ -1,9 +1,9 @@
 EasyStack
 
-Project led by FRC 3794 & FTC 23504 & 26914 a, Wint & Space Tech
+Project led by FRC 3794 & FTC 23504 Wint & Space Tech
 
 EasyStack Leads:
-Davi Heleno - FTC 23504 - FTC 26914
+Davi Heleno - FTC 23504 
 João Pedro - FRC 3794
 
 /--------------------------------------------------------------------------------------------------------------------------------/
