@@ -17,6 +17,7 @@ public enum EasyMotorType {
     REV_CORE_HEX(288.0, 125),
     REV_HD_HEX_20(560.0, 300),
     REV_HD_HEX_40(1120.0, 150),
+    REV_HD_NAKED(28, 6000),
 
     CONFIG(0.0, 0);
 
