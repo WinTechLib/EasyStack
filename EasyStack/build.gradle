@@ -1,5 +1,6 @@
 plugins {
     id 'com.android.library'
+    id 'com.vanniktech.maven.publish' version '0.30.0'
 }
 
 android {
@@ -12,26 +13,59 @@ android {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles "consumer-rules.pro"
     }
+
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
-
 }
 
 dependencies {
-    implementation 'org.firstinspires.ftc:Inspection:12.0.0'
-    implementation 'org.firstinspires.ftc:Blocks:12.0.0'
-    implementation 'org.firstinspires.ftc:RobotCore:12.0.0'
-    implementation 'org.firstinspires.ftc:RobotServer:12.0.0'
-    implementation 'org.firstinspires.ftc:OnBotJava:12.0.0'
-    implementation 'org.firstinspires.ftc:Hardware:12.0.0'
-    implementation 'org.firstinspires.ftc:FtcCommon:12.0.0'
-    implementation 'org.firstinspires.ftc:Vision:12.0.0'
+    compileOnly 'org.firstinspires.ftc:Inspection:12.0.0'
+    compileOnly 'org.firstinspires.ftc:Blocks:12.0.0'
+    compileOnly 'org.firstinspires.ftc:RobotCore:12.0.0'
+    compileOnly 'org.firstinspires.ftc:RobotServer:12.0.0'
+    compileOnly 'org.firstinspires.ftc:OnBotJava:12.0.0'
+    compileOnly 'org.firstinspires.ftc:Hardware:12.0.0'
+    compileOnly 'org.firstinspires.ftc:FtcCommon:12.0.0'
+    compileOnly 'org.firstinspires.ftc:Vision:12.0.0'
     implementation 'androidx.appcompat:appcompat:1.2.0'
     implementation 'com.google.android.material:material:1.12.0'
 
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.7.0'
     androidTestImplementation 'androidx.test.ext:junit:1.3.0'
+}
+
+mavenPublishing {
+    publishToMavenCentral('CENTRAL_PORTAL')
+    signAllPublications()
+
+    coordinates('io.github.ferreirovskizz', 'wintechlib', '1.0.0')
+
+    pom {
+        name = 'EasyStack'
+        description = 'Biblioteca FTC simples para motores, PID e feedforward.'
+        url = 'https://github.com/WinTechLib/EasyStack'
+
+        licenses {
+            license {
+                name = 'MIT License'
+                url = 'https://opensource.org/licenses/MIT'
+            }
+        }
+
+        developers {
+            developer {
+                id = 'ferreirovskizz'
+                name = 'SEU NOME'
+                url = 'https://github.com/ferreirovskizz'
+            }
+        }
+        scm {
+            url = 'https://github.com/WinTechLib/EasyStack'
+            connection = 'scm:git:git://github.com/WinTechLib/EasyStack.git'
+            developerConnection = 'scm:git:ssh://git@github.com/WinTechLib/EasyStack.git'
+        }
+    }
 }
