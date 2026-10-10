@@ -74,9 +74,13 @@ public class EasyMotorGroup implements EasyControllable {
     }
 
     public EasyMotorGroup setLeaderMotor(int index) {
-        if (index >= 0 && index < motors.size()) {
-            this.leaderIndex = index;
+        if (index < 0 || index >= motors.size()) {
+            throw new IllegalArgumentException(
+                    "Leader index out of range: " + index
+            );
         }
+
+        this.leaderIndex = index;
         return this;
     }
 
