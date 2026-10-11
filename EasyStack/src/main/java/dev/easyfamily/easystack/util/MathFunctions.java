@@ -26,4 +26,16 @@ public class MathFunctions {
         return value;
     }
 
+    public static double inputModulus(double input, double minimumInput, double maximumInput) {
+        double modulus = maximumInput - minimumInput;
+
+        int numMax = (int) ((input - minimumInput) / modulus);
+        input -= numMax * modulus;
+
+        int numMin = (int) ((input - maximumInput) / modulus);
+        input -= numMin * modulus;
+
+        return input;
+    }
+
 }
