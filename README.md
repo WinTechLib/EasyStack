@@ -1,9 +1,11 @@
-WinTechLIB
+EasyStack
 
-Project led by FRC 3794 & FTC 26914, Wint & Robotech FTC
+Project led by FRC 3794 & FTC 23504 Wint & Space Tech
 
-WinTechLIB Leads:
-Davi Heleno - FTC 26914
+EasyStack Leads:
+
+Davi Heleno - FTC 23504 
+
 João Pedro - FRC 3794
 
 /--------------------------------------------------------------------------------------------------------------------------------/
