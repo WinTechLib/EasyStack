@@ -1,10 +1,9 @@
 package dev.easyfamily.easystack.control.wpiLibControllers;
 
-import dev.easyfamily.easystack.trajectory.TrapezoidProfile;
 import dev.easyfamily.easystack.trajectory.TrapezoidProfileEx;
 import dev.easyfamily.easystack.util.MathFunctions;
 
-public class EasyProfiledPid {
+public class EasyProfiledPID {
     private static int instances;
 
     private EasyPIDControllerEx m_controller;
@@ -16,12 +15,12 @@ public class EasyProfiledPid {
     private TrapezoidProfileEx.State m_goal = new TrapezoidProfileEx.State();
     private TrapezoidProfileEx.State m_setpoint = new TrapezoidProfileEx.State();
 
-    public EasyProfiledPid(
+    public EasyProfiledPID(
             double Kp, double Ki, double Kd, TrapezoidProfileEx.Constraints constraints) {
         this(Kp, Ki, Kd, constraints, 0.02);
     }
 
-    public EasyProfiledPid(
+    public EasyProfiledPID(
             double Kp, double Ki, double Kd, TrapezoidProfileEx.Constraints constraints, double period) {
         m_controller = new EasyPIDControllerEx(Kp, Ki, Kd, period);
         m_constraints = constraints;
