@@ -1,15 +1,16 @@
 package dev.easyfamily.easystack.control.wpiLibControllers;
 
+import com.qualcomm.robotcore.util.ElapsedTime;
+
 import dev.easyfamily.easystack.util.MathFunctions;
 
 public class EasyPIDControllerEx {
-    private static int instances;
     private double m_kp;
     private double m_ki;
     private double m_kd;
 
     private double m_iZone = Double.POSITIVE_INFINITY;
-    private final double m_period;
+    private double m_period, lastTime;
 
     private double m_maximumIntegral = 1.0;
 
@@ -35,14 +36,12 @@ public class EasyPIDControllerEx {
     private double m_measurement;
 
     private boolean m_haveMeasurement;
-    private boolean m_haveSetpoint;
+    private boolean m_haveSetpoint, first = true;
+    private final ElapsedTime timer = new ElapsedTime();
 
-    public EasyPIDControllerEx(double kp, double ki, double kd) {
-        this(kp, ki, kd, 0.02);
-    }
 
     @SuppressWarnings("this-escape")
-    public EasyPIDControllerEx(double kp, double ki, double kd, double period) {
+    public EasyPIDControllerEx(double kp, double ki, double kd) {
         m_kp = kp;
         m_ki = ki;
         m_kd = kd;
@@ -56,12 +55,6 @@ public class EasyPIDControllerEx {
         if (kd < 0.0) {
             throw new IllegalArgumentException("Kd must be a non-negative number!");
         }
-        if (period <= 0.0) {
-            throw new IllegalArgumentException("Controller period must be a positive number!");
-        }
-        m_period = period;
-
-        instances++;
     }
 
     public void setPID(double kp, double ki, double kd) {
@@ -107,16 +100,6 @@ public class EasyPIDControllerEx {
 
     public double getPeriod() {
         return m_period;
-    }
-
-    @Deprecated(forRemoval = true, since = "2025")
-    public double getPositionTolerance() {
-        return m_errorTolerance;
-    }
-
-    @Deprecated(forRemoval = true, since = "2025")
-    public double getVelocityTolerance() {
-        return m_errorDerivativeTolerance;
     }
 
     public double getErrorTolerance() {
@@ -184,16 +167,6 @@ public class EasyPIDControllerEx {
         m_errorDerivativeTolerance = errorDerivativeTolerance;
     }
 
-    @Deprecated(forRemoval = true, since = "2025")
-    public double getPositionError() {
-        return m_error;
-    }
-
-    @Deprecated(forRemoval = true, since = "2025")
-    public double getVelocityError() {
-        return m_errorDerivative;
-    }
-
     public double getError() {
         return m_error;
     }
@@ -209,6 +182,8 @@ public class EasyPIDControllerEx {
     }
 
     public double calculate(double measurement) {
+        double now = timer.seconds();
+        m_period = first ? 0.0001 : (now - lastTime);
         m_measurement = measurement;
         m_prevError = m_error;
         m_haveMeasurement = true;
@@ -222,7 +197,6 @@ public class EasyPIDControllerEx {
 
         m_errorDerivative = (m_error - m_prevError) / m_period;
 
-        // If the absolute value of the position error is greater than IZone, reset the total error
         if (Math.abs(m_error) > m_iZone) {
             m_totalError = 0;
         } else if (m_ki != 0) {
@@ -233,10 +207,12 @@ public class EasyPIDControllerEx {
                             m_maximumIntegral / m_ki);
         }
 
+        lastTime = now;
+        first = false;
+
         return m_kp * m_error + m_ki * m_totalError + m_kd * m_errorDerivative;
     }
 
-    /** Resets the previous error and the integral term. */
     public void reset() {
         m_error = 0;
         m_prevError = 0;

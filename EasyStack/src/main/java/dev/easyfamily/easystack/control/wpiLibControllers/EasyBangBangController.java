@@ -1,7 +1,6 @@
 package dev.easyfamily.easystack.control.wpiLibControllers;
 
 public class EasyBangBangController {
-    private static int instances;
 
     private double m_tolerance;
 
@@ -9,8 +8,6 @@ public class EasyBangBangController {
     private double m_measurement;
 
     public EasyBangBangController(double tolerance) {
-        instances++;
-
         setTolerance(tolerance);
     }
 

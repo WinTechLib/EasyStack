@@ -4,9 +4,7 @@ import dev.easyfamily.easystack.trajectory.TrapezoidProfileEx;
 import dev.easyfamily.easystack.util.MathFunctions;
 
 public class EasyProfiledPID {
-    private static int instances;
-
-    private EasyPIDControllerEx m_controller;
+    private final EasyPIDControllerEx m_controller;
     private double m_minimumInput;
     private double m_maximumInput;
 
@@ -17,15 +15,9 @@ public class EasyProfiledPID {
 
     public EasyProfiledPID(
             double Kp, double Ki, double Kd, TrapezoidProfileEx.Constraints constraints) {
-        this(Kp, Ki, Kd, constraints, 0.02);
-    }
-
-    public EasyProfiledPID(
-            double Kp, double Ki, double Kd, TrapezoidProfileEx.Constraints constraints, double period) {
-        m_controller = new EasyPIDControllerEx(Kp, Ki, Kd, period);
+        m_controller = new EasyPIDControllerEx(Kp, Ki, Kd);
         m_constraints = constraints;
         m_profile = new TrapezoidProfileEx(m_constraints);
-        instances++;
     }
 
     public void setPID(double Kp, double Ki, double Kd) {
@@ -145,7 +137,6 @@ public class EasyProfiledPID {
 
     public double calculate(double measurement) {
         if (m_controller.isContinuousInputEnabled()) {
-            // Get error which is the smallest distance between goal and measurement
             double errorBound = (m_maximumInput - m_minimumInput) / 2.0;
             double goalMinDistance =
                     MathFunctions.inputModulus(m_goal.position - measurement, -errorBound, errorBound);
