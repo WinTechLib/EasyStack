@@ -3,9 +3,9 @@ package org.firstinspires.ftc.teamcode.opModes;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
-import dev.easyfamily.easystack.drivebase.MecanumDrive;
-import dev.easyfamily.easystack.gamepad.EasyGamepad;
-import dev.easyfamily.easystack.hardware.Motors.EasyMotor;
+import dev.easyfamily.wintechlib.drivebase.MecanumDrive;
+import dev.easyfamily.wintechlib.gamepad.EasyGamepad;
+import dev.easyfamily.wintechlib.hardware.Motors.EasyMotor;
 
 @TeleOp(name = "Easy Mecanum Drive")
 public class EasyMecanumDrive extends OpMode {

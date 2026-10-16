@@ -4,12 +4,13 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 
-import dev.easyfamily.easystack.control.PIDCoefficients;
-import dev.easyfamily.easystack.feedforward.FFCoefficients;
-import dev.easyfamily.easystack.hardware.Servo.EasyAbsoluteAnalogEncoder;
-import dev.easyfamily.easystack.subsytem.EasySubsystem;
-import dev.easyfamily.easystack.hardware.Servo.EasyCRServo;
-import dev.easyfamily.easystack.hardware.Servo.EasyCRServoGroup;
+import dev.easyfamily.wintechlib.control.PIDCoefficients;
+import dev.easyfamily.wintechlib.feedforward.FFCoefficients;
+import dev.easyfamily.wintechlib.hardware.Servo.EasyAbsoluteAnalogEncoder;
+import dev.easyfamily.wintechlib.hardware.Servo.EasyServo;
+import dev.easyfamily.wintechlib.subsytem.EasySubsystem;
+import dev.easyfamily.wintechlib.hardware.Servo.EasyCRServo;
+import dev.easyfamily.wintechlib.hardware.Servo.EasyCRServoGroup;
 
 public class Turret implements EasySubsystem {
     private EasyCRServo Axon1;
@@ -22,6 +23,7 @@ public class Turret implements EasySubsystem {
     private PIDCoefficients pid;
 
     private FFCoefficients ff;
+    private EasyServo teste;
 
 
     @Override

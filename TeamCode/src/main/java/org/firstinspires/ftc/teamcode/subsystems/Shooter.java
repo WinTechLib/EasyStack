@@ -1,19 +1,22 @@
 package org.firstinspires.ftc.teamcode.subsystems;
 
+import static org.firstinspires.ftc.robotcore.external.BlocksOpModeCompanion.gamepad1;
+
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 
-import dev.easyfamily.easystack.control.EasyPIDController;
-import dev.easyfamily.easystack.control.PIDCoefficients;
-import dev.easyfamily.easystack.feedforward.FFCoefficients;
-import dev.easyfamily.easystack.feedforward.FFController;
-import dev.easyfamily.easystack.hardware.Motors.EasyMotor;
-import dev.easyfamily.easystack.hardware.Motors.EasyMotorGroup;
-import dev.easyfamily.easystack.hardware.Servo.EasyServo;
-import dev.easyfamily.easystack.hardware.Servo.EasyServoGroup;
-import dev.easyfamily.easystack.subsytem.EasySubsystem;
-import dev.easyfamily.easystack.util.InterpLUT;
+import dev.easyfamily.wintechlib.control.EasyPIDController;
+import dev.easyfamily.wintechlib.control.PIDCoefficients;
+import dev.easyfamily.wintechlib.feedforward.FFCoefficients;
+import dev.easyfamily.wintechlib.feedforward.FFController;
+import dev.easyfamily.wintechlib.gamepad.EasyGamepad;
+import dev.easyfamily.wintechlib.hardware.Motors.EasyMotor;
+import dev.easyfamily.wintechlib.hardware.Motors.EasyMotorGroup;
+import dev.easyfamily.wintechlib.hardware.Servo.EasyServo;
+import dev.easyfamily.wintechlib.hardware.Servo.EasyServoGroup;
+import dev.easyfamily.wintechlib.subsytem.EasySubsystem;
+import dev.easyfamily.wintechlib.util.InterpLUT;
 
 public class Shooter implements EasySubsystem {
 
@@ -33,13 +36,14 @@ public class Shooter implements EasySubsystem {
     FFController ffController = new FFController(ffCoefficients);
     InterpLUT shooterVelocity = new InterpLUT();
     InterpLUT PositionAng = new InterpLUT();
-
+    EasyGamepad gamepad;
     public void toggle() {
         on = !on;
     }
 
     @Override
     public void init(HardwareMap hardwareMap) {
+        gamepad = new EasyGamepad(gamepad1).setADebounce(500);
         BlockerServo = new EasyServo(hardwareMap, "BlockerServo")
                 .setLimits(0.3, 0.8)
                 .addState("Closed", 1) //When .setState("Closed"), the position will go to 1
@@ -58,7 +62,6 @@ public class Shooter implements EasySubsystem {
         PositionAng.add(60, 40);
         PositionAng.add(80, 50);
         PositionAng.createLUT();
-
         shooter_motor = new EasyMotor(hardwareMap, "shooter_motor")
                 .brakeMode()
                 .reversed();
@@ -76,16 +79,14 @@ public class Shooter implements EasySubsystem {
 
     @Override
     public void loop() {
-
         double distance = 0;
         double targetAngle = PositionAng.get(distance);
         Anguladores.setAngle(targetAngle, AngleUnit.DEGREES);
 
-        if (on) {
+        if (gamepad.a()) {
             BlockerServo.setState("Open"); //0
         } else {
             BlockerServo.setState("Closed"); //1
-
         }
 
     }

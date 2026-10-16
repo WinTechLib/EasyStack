@@ -5,7 +5,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.teamcode.subsystems.Shooter;
 
-import dev.easyfamily.easystack.gamepad.EasyGamepad;
+import dev.easyfamily.wintechlib.gamepad.EasyGamepad;
 
 @TeleOp(name = "Shooter")
 public class teleOP extends OpMode {
