@@ -1,13 +1,12 @@
 package org.firstinspires.ftc.teamcode.subst;
 
-import com.pedropathing.follower.Follower;
 import com.pedropathing.math.Pose;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
-import dev.easyfamily.easystack.hardware.Motors.EasyMotor;
-import dev.easyfamily.easystack.hardware.Servo.EasyServo;
-import dev.easyfamily.easystack.subsytem.EasySubsystem;
-import dev.easyfamily.easystack.util.InterpLUT;
+import dev.easyfamily.wintechlib.hardware.Motors.EasyMotor;
+import dev.easyfamily.wintechlib.hardware.Servo.EasyServo;
+import dev.easyfamily.wintechlib.subsytem.EasySubsystem;
+import dev.easyfamily.wintechlib.util.InterpLUT;
 
 public class Shooter implements EasySubsystem {
 

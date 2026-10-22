@@ -2,9 +2,9 @@ package org.firstinspires.ftc.teamcode.subsystems;
 
 import static org.firstinspires.ftc.robotcore.external.BlocksOpModeCompanion.hardwareMap;
 
-import dev.easyfamily.easystack.control.EasyPIDController;
-import dev.easyfamily.easystack.control.PIDCoefficients;
-import dev.easyfamily.easystack.hardware.Motors.EasyMotor;
+import dev.easyfamily.wintechlib.control.EasyPIDController;
+import dev.easyfamily.wintechlib.control.PIDCoefficients;
+import dev.easyfamily.wintechlib.hardware.Motors.EasyMotor;
 
 public class DocsClass {
     PIDCoefficients coefficients = new PIDCoefficients(
