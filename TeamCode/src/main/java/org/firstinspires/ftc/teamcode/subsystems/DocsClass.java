@@ -2,12 +2,12 @@ package org.firstinspires.ftc.teamcode.subsystems;
 
 import static org.firstinspires.ftc.robotcore.external.BlocksOpModeCompanion.hardwareMap;
 
-import dev.easyfamily.wintechlib.control.EasyPIDController;
-import dev.easyfamily.wintechlib.control.PIDCoefficients;
-import dev.easyfamily.wintechlib.hardware.Motors.EasyMotor;
+import dev.easyfamily.EasyStack.control.EasyPIDController;
+import dev.easyfamily.EasyStack.control.EasyPIDCoefficients;
+import dev.easyfamily.EasyStack.hardware.Motors.EasyMotor;
 
 public class DocsClass {
-    PIDCoefficients coefficients = new PIDCoefficients(
+    EasyPIDCoefficients coefficients = new EasyPIDCoefficients(
             0.5,
             0.0,
             0.02

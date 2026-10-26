@@ -6,17 +6,17 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 
-import dev.easyfamily.wintechlib.control.EasyPIDController;
-import dev.easyfamily.wintechlib.control.PIDCoefficients;
-import dev.easyfamily.wintechlib.feedforward.FFCoefficients;
-import dev.easyfamily.wintechlib.feedforward.FFController;
-import dev.easyfamily.wintechlib.gamepad.EasyGamepad;
-import dev.easyfamily.wintechlib.hardware.Motors.EasyMotor;
-import dev.easyfamily.wintechlib.hardware.Motors.EasyMotorGroup;
-import dev.easyfamily.wintechlib.hardware.Servo.EasyServo;
-import dev.easyfamily.wintechlib.hardware.Servo.EasyServoGroup;
-import dev.easyfamily.wintechlib.subsytem.EasySubsystem;
-import dev.easyfamily.wintechlib.util.InterpLUT;
+import dev.easyfamily.EasyStack.control.EasyPIDController;
+import dev.easyfamily.EasyStack.control.EasyPIDCoefficients;
+import dev.easyfamily.EasyStack.feedforward.EasyFFCoefficients;
+import dev.easyfamily.EasyStack.feedforward.EasyFFController;
+import dev.easyfamily.EasyStack.gamepad.EasyGamepad;
+import dev.easyfamily.EasyStack.hardware.Motors.EasyMotor;
+import dev.easyfamily.EasyStack.hardware.Motors.EasyMotorGroup;
+import dev.easyfamily.EasyStack.hardware.Servo.EasyServo;
+import dev.easyfamily.EasyStack.hardware.Servo.EasyServoGroup;
+import dev.easyfamily.EasyStack.subsytem.EasySubsystem;
+import dev.easyfamily.EasyStack.util.InterpLUT;
 
 public class Shooter implements EasySubsystem {
 
@@ -29,11 +29,11 @@ public class Shooter implements EasySubsystem {
     public static double targetVelocity;
 
     public boolean on = false;
-    PIDCoefficients pidCoefficients = new PIDCoefficients(0, 0, 0);
-    FFCoefficients ffCoefficients = new FFCoefficients(0, 0, 0);
+    EasyPIDCoefficients pidCoefficients = new EasyPIDCoefficients(0, 0, 0);
+    EasyFFCoefficients ffCoefficients = new EasyFFCoefficients(0, 0, 0);
 
     EasyPIDController pidController = new EasyPIDController(pidCoefficients);
-    FFController ffController = new FFController(ffCoefficients);
+    EasyFFController ffController = new EasyFFController(ffCoefficients);
     InterpLUT shooterVelocity = new InterpLUT();
     InterpLUT PositionAng = new InterpLUT();
     EasyGamepad gamepad;

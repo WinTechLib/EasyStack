@@ -1,18 +1,12 @@
 package org.firstinspires.ftc.teamcode.subsystems;
 
-import static org.firstinspires.ftc.robotcore.external.BlocksOpModeCompanion.gamepad1;
-
-import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-
-import dev.easyfamily.wintechlib.control.EasyPIDController;
-import dev.easyfamily.wintechlib.control.wpiLibControllers.EasyElevatorFeedforward;
-import dev.easyfamily.wintechlib.drivebase.drive.Drivetrain;
-import dev.easyfamily.wintechlib.hardware.Motors.EasyMotor;
-import dev.easyfamily.wintechlib.hardware.Sensors.EasyRevIMU;
-import dev.easyfamily.wintechlib.subsytem.EasySubsystem;
+import dev.easyfamily.EasyStack.control.EasyPIDController;
+import dev.easyfamily.EasyStack.control.wpiLibControllers.EasyElevatorFeedforward;
+import dev.easyfamily.EasyStack.drivebase.drive.Drivetrain;
+import dev.easyfamily.EasyStack.hardware.Motors.EasyMotor;
+import dev.easyfamily.EasyStack.subsytem.EasySubsystem;
 
 public class Slide implements EasySubsystem {
 
