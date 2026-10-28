@@ -17,6 +17,7 @@ import dev.easyfamily.EasyStack.control.EasyPIDFCoefficients;
 import dev.easyfamily.EasyStack.controllable.EasyController;
 import dev.easyfamily.EasyStack.controllable.EasyControllable;
 import dev.easyfamily.EasyStack.controllable.EasyFeedforward;
+import dev.easyfamily.EasyStack.controllable.EasyMotionProfile;
 import dev.easyfamily.EasyStack.feedforward.EasyFFController;
 
 public class EasyMotor implements EasyControllable {
