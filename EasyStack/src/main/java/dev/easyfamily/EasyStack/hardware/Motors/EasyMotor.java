@@ -5,6 +5,7 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
 
+import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 
 import dev.easyfamily.EasyStack.control.EasyPIDFController;
@@ -15,9 +16,17 @@ import dev.easyfamily.EasyStack.control.EasyPIDCoefficients;
 import dev.easyfamily.EasyStack.control.EasyPIDFCoefficients;
 import dev.easyfamily.EasyStack.controllable.EasyController;
 import dev.easyfamily.EasyStack.controllable.EasyControllable;
+import dev.easyfamily.EasyStack.controllable.EasyFeedforward;
 import dev.easyfamily.EasyStack.feedforward.EasyFFController;
 
 public class EasyMotor implements EasyControllable {
+
+    /** Public view of the current control mode (see {@link #getControlMode()}). */
+    public enum ControlMode {
+        POWER,
+        VELOCITY,
+        POSITION
+    }
 
     private enum Mode {
         POWER,
@@ -50,7 +59,16 @@ public class EasyMotor implements EasyControllable {
 
     private EasyController customVelocityController;
     private EasyController customPositionController;
-    private EasyFFController velocityFF;
+    private EasyFeedforward velocityFF;
+
+    private EasyMotionProfile positionProfile;
+    private EasyMotionProfile velocityProfile;
+    private boolean positionProfileInitialized = false;
+    private boolean velocityProfileInitialized = false;
+    private long positionProfileStartNanos = 0L;
+    private long velocityProfileStartNanos = 0L;
+    private double positionProfileGoal = Double.NaN;
+    private double velocityProfileGoal = Double.NaN;
     private EasyPIDFCoefficients positionPIDFCoeffs;
 
     private EasyPIDFCoefficients velocityCoeffs;
@@ -63,6 +81,13 @@ public class EasyMotor implements EasyControllable {
 
     private double targetRPM = 0.0;
     private double targetPosition = 0.0;
+
+    private final String name;
+    private double lastControllerOutput = 0.0;
+    private double lastFeedforwardOutput = 0.0;
+    private double lastVoltageMultiplier = 1.0;
+    private double lastRequestedPower = 0.0;
+    private double lastShapedPower = 0.0;
 
     private final VoltageSensor voltageSensor;
     private boolean voltageCompensation = false;
@@ -101,6 +126,7 @@ public class EasyMotor implements EasyControllable {
             double powerCacheTolerance
     ) {
         this.motor = hardwareMap.get(DcMotorEx.class, name);
+        this.name = name;
         this.type = type == null ? EasyMotorType.CONFIG : type;
         this.powerCacheTolerance = Math.max(0.0, powerCacheTolerance);
 
@@ -227,27 +253,55 @@ public class EasyMotor implements EasyControllable {
 
         targetRPM = rpm;
 
-        if (rpm == 0.0) {
+        EasyMotionProfile.State profileState = null;
+        double controllerTargetRPM = rpm;
+
+        if (velocityProfile != null) {
+            if (!velocityProfileInitialized || !sameTarget(velocityProfileGoal, rpm)) {
+                velocityProfile.reset(
+                        new EasyMotionProfile.State(getRPM(), getRPMAcceleration(), 0.0),
+                        new EasyMotionProfile.State(rpm, 0.0, 0.0)
+                );
+                velocityProfileStartNanos = System.nanoTime();
+                velocityProfileGoal = rpm;
+                velocityProfileInitialized = true;
+            }
+
+            double elapsed = (System.nanoTime() - velocityProfileStartNanos) / 1e9;
+            profileState = velocityProfile.sample(elapsed);
+            if (profileState != null) {
+                // For velocity profiles, state.position is the commanded RPM,
+                // and state.velocity is the desired RPM/s (acceleration).
+                controllerTargetRPM = profileState.position;
+            }
+        }
+
+        if (rpm == 0.0 && velocityProfile == null) {
             resetControllers();
+            lastControllerOutput = 0.0;
+            lastFeedforwardOutput = 0.0;
             writePower(0.0);
             return this;
         }
 
         EasyController controller = customVelocityController;
-
         if (controller == null) {
             velocityPID.setPIDF(activeVelocityCoeffs());
             controller = velocityPID;
         }
 
-        double output = controller.calculate(getRPM(), rpm);
+        double controllerOut = controller.calculate(getRPM(), controllerTargetRPM);
+        double accelerationTarget = profileState == null ? 0.0 : profileState.velocity;
+        double ffOut = velocityFF != null
+                ? velocityFF.calculate(controllerTargetRPM, accelerationTarget)
+                : 0.0;
+        double multiplier = calculateVoltageMultiplier();
 
-        if (velocityFF != null) {
-            output += velocityFF.calculate(rpm);
-        }
+        lastControllerOutput = controllerOut;
+        lastFeedforwardOutput = ffOut;
+        lastVoltageMultiplier = multiplier;
 
-        writePower(clampPower(output * calculateVoltageMultiplier()));
-
+        writePower(clampPower((controllerOut + ffOut) * multiplier));
         return this;
     }
 
@@ -292,6 +346,11 @@ public class EasyMotor implements EasyControllable {
     }
 
     public EasyMotor setVelocityFF(EasyFFController feedforward) {
+        return setVelocityFeedforward(feedforward);
+    }
+
+    /** Sets any feedforward implementation, not only EasyFFController. */
+    public EasyMotor setVelocityFeedforward(EasyFeedforward feedforward) {
         velocityFF = feedforward;
         velocityDefaults = null;
         return this;
@@ -303,6 +362,21 @@ public class EasyMotor implements EasyControllable {
 
     public EasyMotor setVelocityFF(double kS, double kV, double kA) {
         return setVelocityFF(new EasyFFController(kS, kV, kA));
+    }
+
+    public EasyFeedforward getVelocityFeedforward() {
+        return velocityFF;
+    }
+
+    public EasyMotor setVelocityProfile(EasyMotionProfile profile) {
+        this.velocityProfile = profile;
+        this.velocityProfileInitialized = false;
+        this.velocityProfileGoal = Double.NaN;
+        return this;
+    }
+
+    public EasyMotionProfile getVelocityProfile() {
+        return velocityProfile;
     }
 
     public EasyMotor setRPMTolerance(double rpm) {
@@ -321,9 +395,28 @@ public class EasyMotor implements EasyControllable {
         }
 
         targetPosition = ticks;
+        double controllerTargetPosition = ticks;
+        EasyMotionProfile.State profileState = null;
+
+        if (positionProfile != null) {
+            if (!positionProfileInitialized || !sameTarget(positionProfileGoal, ticks)) {
+                positionProfile.reset(
+                        new EasyMotionProfile.State(getPosition(), getVelocity(), getAcceleration()),
+                        new EasyMotionProfile.State(ticks, 0.0, 0.0)
+                );
+                positionProfileStartNanos = System.nanoTime();
+                positionProfileGoal = ticks;
+                positionProfileInitialized = true;
+            }
+
+            double elapsed = (System.nanoTime() - positionProfileStartNanos) / 1e9;
+            profileState = positionProfile.sample(elapsed);
+            if (profileState != null) {
+                controllerTargetPosition = profileState.position;
+            }
+        }
 
         EasyController controller;
-
         if (customPositionController != null) {
             controller = customPositionController;
         } else {
@@ -333,13 +426,39 @@ public class EasyMotor implements EasyControllable {
                 EasyPIDCoefficients c = activePositionCoeffs();
                 positionPID.setPIDF(c.kP, c.kI, c.kD, 0.0);
             }
-
             controller = positionPID;
         }
 
-        writePower(clampPower((controller.calculate(getPosition(), ticks) + staticFeedforward) * calculateVoltageMultiplier()));
+        double controllerOut = controller.calculate(getPosition(), controllerTargetPosition);
+        double profileFeedforward = 0.0;
+        if (profileState != null && velocityFF != null) {
+            double cpr = getCPR();
+            if (cpr > 0.0) {
+                double desiredRPM = profileState.velocity / cpr * 60.0;
+                double desiredRPMPerSecond = profileState.acceleration / cpr * 60.0;
+                profileFeedforward = velocityFF.calculate(desiredRPM, desiredRPMPerSecond);
+            }
+        }
 
+        double ffOut = staticFeedforward + profileFeedforward;
+        double multiplier = calculateVoltageMultiplier();
+        lastControllerOutput = controllerOut;
+        lastFeedforwardOutput = ffOut;
+        lastVoltageMultiplier = multiplier;
+
+        writePower(clampPower((controllerOut + ffOut) * multiplier));
         return this;
+    }
+
+    public EasyMotor setPositionProfile(EasyMotionProfile profile) {
+        this.positionProfile = profile;
+        this.positionProfileInitialized = false;
+        this.positionProfileGoal = Double.NaN;
+        return this;
+    }
+
+    public EasyMotionProfile getPositionProfile() {
+        return positionProfile;
     }
 
     public EasyMotor moveToRotations(double rotations) {
@@ -435,6 +554,11 @@ public class EasyMotor implements EasyControllable {
         if (customPositionController != null) {
             customPositionController.reset();
         }
+
+        positionProfileInitialized = false;
+        velocityProfileInitialized = false;
+        positionProfileGoal = Double.NaN;
+        velocityProfileGoal = Double.NaN;
 
         return this;
     }
@@ -744,6 +868,177 @@ public class EasyMotor implements EasyControllable {
         return motor.isOverCurrent();
     }
 
+    public String getName() {
+        return name;
+    }
+
+    public ControlMode getControlMode() {
+        return ControlMode.valueOf(mode.name());
+    }
+    public double getTargetVelocityTicks() {
+        return targetRPM * getCPR() / 60.0;
+    }
+
+    public double getVelocityErrorTicks() {
+        return getTargetVelocityTicks() - getVelocity();
+    }
+
+    public double getTargetRotations() {
+        double cpr = getCPR();
+        return cpr <= 0 ? 0.0 : targetPosition / cpr;
+    }
+
+    public double getTargetDegrees() {
+        return getTargetRotations() * 360.0;
+    }
+
+    public double getRotationsError() {
+        return getTargetRotations() - getRotations();
+    }
+
+    public double getDegreesError() {
+        return getTargetDegrees() - getDegrees();
+    }
+    public double getControllerOutput() {
+        return lastControllerOutput;
+    }
+    public double getFeedforwardOutput() {
+        return lastFeedforwardOutput;
+    }
+    public double getVoltageMultiplier() {
+        return lastVoltageMultiplier;
+    }
+
+    public double getRequestedPower() {
+        return lastRequestedPower;
+    }
+    public double getShapedPower() {
+        return lastShapedPower;
+    }
+    public EasyPIDFCoefficients getVelocityPIDFCoefficients() {
+        return activeVelocityCoeffs();
+    }
+    public EasyPIDCoefficients getPositionPIDCoefficients() {
+        return activePositionCoeffs();
+    }
+    public EasyPIDFCoefficients getPositionPIDFCoefficients() {
+        return positionPIDFCoeffs;
+    }
+
+    /**
+     * Legacy getter. Returns the EasyFFController when that implementation is
+     * configured; returns null for a custom EasyFeedforward implementation.
+     */
+    public EasyFFController getVelocityFF() {
+        return velocityFF instanceof EasyFFController
+                ? (EasyFFController) velocityFF
+                : null;
+    }
+
+    private double getRPMAcceleration() {
+        double cpr = getCPR();
+        return cpr <= 0.0 ? 0.0 : getAcceleration() / cpr * 60.0;
+    }
+
+    private static boolean sameTarget(double a, double b) {
+        return Double.isFinite(a) && Double.isFinite(b)
+                && Math.abs(a - b) <= 1e-6;
+    }
+
+    public boolean hasCustomVelocityController() {
+        return customVelocityController != null;
+    }
+
+    public boolean hasCustomPositionController() {
+        return customPositionController != null;
+    }
+
+    public double getRPMTolerance() {
+        return activeRPMTolerance();
+    }
+
+    public double getPositionTolerance() {
+        return activePositionTolerance();
+    }
+
+    public double getStaticFeedforward() {
+        return staticFeedforward;
+    }
+
+    public double getPowerLimit() {
+        return powerLimit;
+    }
+
+    public double getDeadband() {
+        return deadband;
+    }
+
+    public double getPowerRamp() {
+        return rampRate;
+    }
+
+    public boolean hasPositionLimits() {
+        return hasPositionLimits;
+    }
+
+    public double getMinPositionLimit() {
+        return minPositionLimit;
+    }
+
+    public double getMaxPositionLimit() {
+        return maxPositionLimit;
+    }
+
+    public double getPositionOffset() {
+        return positionOffset;
+    }
+
+    public double getDirection() {
+        return direction;
+    }
+
+    public boolean isVoltageCompensationEnabled() {
+        return voltageCompensation;
+    }
+
+    public double getNominalVoltage() {
+        return nominalVoltage;
+    }
+
+    public DcMotor.ZeroPowerBehavior getZeroPowerBehavior() {
+        return motor.getZeroPowerBehavior();
+    }
+
+    public boolean isBrakeMode() {
+        return motor.getZeroPowerBehavior() == DcMotor.ZeroPowerBehavior.BRAKE;
+    }
+    public String getDebugString() {
+        return String.format(
+                Locale.US,
+                "%s[%s] rpm=%.1f/%.1f (err %.1f) pos=%.0f/%.0f (err %.0f) pid=%.3f ff=%.3f vMult=%.2f pwr=%.2f amps=%.2f",
+                name, mode.name(),
+                getRPM(), targetRPM, getRPMError(),
+                getPosition(), targetPosition, getPositionError(),
+                lastControllerOutput, lastFeedforwardOutput, lastVoltageMultiplier,
+                getPower(), getCurrentAmps()
+        );
+    }
+    public EasyMotor addTelemetry(Telemetry telemetry) {
+        return addTelemetry(telemetry, name);
+    }
+
+    public EasyMotor addTelemetry(Telemetry telemetry, String prefix) {
+        String p = prefix == null || prefix.isEmpty() ? "" : prefix + " ";
+        telemetry.addData(p + "mode", mode);
+        telemetry.addData(p + "rpm / target / error", String.format(Locale.US, "%.1f / %.1f / %.1f", getRPM(), targetRPM, getRPMError()));
+        telemetry.addData(p + "pos / target / error", String.format(Locale.US, "%.0f / %.0f / %.0f", getPosition(), targetPosition, getPositionError()));
+        telemetry.addData(p + "controller / ff", String.format(Locale.US, "%.3f / %.3f", lastControllerOutput, lastFeedforwardOutput));
+        telemetry.addData(p + "power", String.format(Locale.US, "%.2f", getPower()));
+        telemetry.addData(p + "amps", String.format(Locale.US, "%.2f", getCurrentAmps()));
+        telemetry.addData(p + "at target", isAtTarget());
+        return this;
+    }
+
     public DcMotorEx getMotor() {
         return motor;
     }
@@ -754,6 +1049,7 @@ public class EasyMotor implements EasyControllable {
 
     private void writePower(double power, boolean applyShaping) {
         power = Math.max(-1.0, Math.min(1.0, power));
+        lastRequestedPower = power;
 
         if (applyShaping) {
             power = applyPositionLimits(power);
@@ -762,6 +1058,7 @@ public class EasyMotor implements EasyControllable {
             rampOutput = power;
         }
 
+        lastShapedPower = power;
         double appliedPower = power * direction;
 
         boolean shouldWrite =

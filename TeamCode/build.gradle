@@ -36,6 +36,7 @@ android {
 dependencies {
     implementation project(':FtcRobotController')
     implementation project(':EasyStack')
+    implementation "org.solverslib:core:0.3.6"
 }
 
 // Include common definitions from above.

@@ -1,12 +1,15 @@
 package dev.easyfamily.EasyStack.hardware.Motors;
 
 import java.util.ArrayList;
+import java.util.Locale;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
+
+import org.firstinspires.ftc.robotcore.external.Telemetry;
 
 import dev.easyfamily.EasyStack.control.EasyPIDCoefficients;
 import dev.easyfamily.EasyStack.control.EasyPIDFCoefficients;
@@ -31,6 +34,9 @@ public class EasyMotorGroup implements EasyControllable {
 
     private boolean crossCoupled = false;
     private double crossCouplingGain = DEFAULT_CROSS_COUPLING_GAIN;
+
+    private double targetRPM = 0.0;
+    private double targetPosition = 0.0;
 
     public EasyMotorGroup(EasyMotor... motors) {
         if (motors == null || motors.length == 0) {
@@ -152,6 +158,8 @@ public class EasyMotorGroup implements EasyControllable {
     }
 
     public EasyMotorGroup setRPM(double rpm) {
+        targetRPM = rpm;
+
         if (!isCrossCoupled()) {
             leader().setRPM(rpm);
             mirrorLeader();
@@ -169,6 +177,8 @@ public class EasyMotorGroup implements EasyControllable {
     }
 
     public EasyMotorGroup moveToPosition(double ticks) {
+        targetPosition = ticks;
+
         if (!isCrossCoupled()) {
             leader().moveToPosition(ticks);
             mirrorLeader();
@@ -399,6 +409,179 @@ public class EasyMotorGroup implements EasyControllable {
     public EasyMotorGroup floatMode() {
         all(EasyMotor::floatMode);
         return this;
+    }
+
+    public double getTargetRPM() {
+        return targetRPM;
+    }
+
+    public double getRPMError() {
+        return targetRPM - getRPM();
+    }public double getTargetPosition() {
+        return targetPosition;
+    }
+
+    public double getPositionError() {
+        return targetPosition - getPosition();
+    }
+
+    public double getTargetRotations() {
+        double cpr = leader().getCPR();
+        return cpr <= 0 ? 0.0 : targetPosition / cpr;
+    }
+
+    public double getTargetDegrees() {
+        return getTargetRotations() * 360.0;
+    }
+
+    public double getRotationsError() {
+        return getTargetRotations() - getRotations();
+    }
+
+    public double getDegreesError() {
+        return getTargetDegrees() - getDegrees();
+    }
+
+    public double getAcceleration() {
+        return leader().getAcceleration();
+    }
+
+    public EasyMotor.ControlMode getControlMode() {
+        return leader().getControlMode();
+    }
+
+    public EncoderStrategy getEncoderStrategy() {
+        return encoderStrategy;
+    }
+
+    public int getLeaderIndex() {
+        return leaderIndex;
+    }
+    public double[] getRPMs() {
+        return readAll(EasyMotor::getRPM);
+    }
+
+    public double[] getPositions() {
+        return readAll(EasyMotor::getPosition);
+    }
+
+    public double[] getVelocities() {
+        return readAll(EasyMotor::getVelocity);
+    }
+
+    public double[] getPowers() {
+        return readAll(EasyMotor::getPower);
+    }
+
+    public double[] getCurrents() {
+        return readAll(EasyMotor::getCurrentAmps);
+    }
+    public double[] getRPMErrors() {
+        double[] out = getRPMs();
+        for (int i = 0; i < out.length; i++) out[i] = targetRPM - out[i];
+        return out;
+    }
+    public double[] getPositionErrors() {
+        double[] out = getPositions();
+        for (int i = 0; i < out.length; i++) out[i] = targetPosition - out[i];
+        return out;
+    }
+    public double getRPMSpread() {
+        return spread(getRPMs());
+    }
+    public double getPositionSpread() {
+        return spread(getPositions());
+    }
+
+    public double getMaxCurrentAmps() {
+        double max = 0.0;
+        for (double c : getCurrents()) max = Math.max(max, c);
+        return max;
+    }
+
+    public boolean isOverCurrent() {
+        for (EasyMotor motor : motors) {
+            if (motor.isOverCurrent()) return true;
+        }
+        return false;
+    }
+
+    public boolean hasPositionLimits() {
+        return leader().hasPositionLimits();
+    }
+
+    public double getMinPositionLimit() {
+        return leader().getMinPositionLimit();
+    }
+
+    public double getMaxPositionLimit() {
+        return leader().getMaxPositionLimit();
+    }
+
+    public double getPowerLimit() {
+        return leader().getPowerLimit();
+    }
+
+    public double getControllerOutput() {
+        return leader().getControllerOutput();
+    }
+
+    public double getFeedforwardOutput() {
+        return leader().getFeedforwardOutput();
+    }
+
+    public double getCPR() {
+        return leader().getCPR();
+    }
+
+    public double getMaxRPM() {
+        return leader().getMaxRPM();
+    }
+
+    public String getDebugString() {
+        return String.format(
+                Locale.US,
+                "Group[%s,%s,n=%d] rpm=%.1f/%.1f (err %.1f, spread %.1f) pos=%.0f/%.0f (err %.0f, spread %.0f) amps=%.2f (max %.2f)",
+                getControlMode().name(), encoderStrategy.name(), motors.size(),
+                getRPM(), targetRPM, getRPMError(), getRPMSpread(),
+                getPosition(), targetPosition, getPositionError(), getPositionSpread(),
+                getCurrentAmps(), getMaxCurrentAmps()
+        );
+    }
+    public EasyMotorGroup addTelemetry(Telemetry telemetry, String prefix) {
+        String p = prefix == null || prefix.isEmpty() ? "" : prefix + " ";
+        telemetry.addData(p + "mode", getControlMode());
+        telemetry.addData(p + "rpm / target / error", String.format(Locale.US, "%.1f / %.1f / %.1f", getRPM(), targetRPM, getRPMError()));
+        telemetry.addData(p + "pos / target / error", String.format(Locale.US, "%.0f / %.0f / %.0f", getPosition(), targetPosition, getPositionError()));
+        telemetry.addData(p + "rpm spread", String.format(Locale.US, "%.1f", getRPMSpread()));
+        telemetry.addData(p + "pos spread", String.format(Locale.US, "%.0f", getPositionSpread()));
+        telemetry.addData(p + "amps total / max", String.format(Locale.US, "%.2f / %.2f", getCurrentAmps(), getMaxCurrentAmps()));
+        for (int i = 0; i < motors.size(); i++) {
+            EasyMotor m = motors.get(i);
+            telemetry.addData(p + "motor " + i + (i == leaderIndex ? " (leader)" : ""),
+                    String.format(Locale.US, "rpm=%.1f pos=%.0f pwr=%.2f amps=%.2f",
+                            m.getRPM(), m.getPosition(), m.getPower(), m.getCurrentAmps()));
+        }
+        return this;
+    }
+
+    public EasyMotorGroup addTelemetry(Telemetry telemetry) {
+        return addTelemetry(telemetry, "");
+    }
+
+    private double[] readAll(ToDoubleFunction<EasyMotor> reading) {
+        double[] out = new double[motors.size()];
+        for (int i = 0; i < out.length; i++) out[i] = reading.applyAsDouble(motors.get(i));
+        return out;
+    }
+
+    private static double spread(double[] values) {
+        double min = Double.MAX_VALUE, max = -Double.MAX_VALUE;
+        for (double v : values) {
+            min = Math.min(min, v);
+            max = Math.max(max, v);
+        }
+        return values.length == 0 ? 0.0 : max - min;
     }
 
     private EasyMotor leader() {
