@@ -1,19 +1,22 @@
 package org.firstinspires.ftc.teamcode.subsystems;
 
+import static org.firstinspires.ftc.robotcore.external.BlocksOpModeCompanion.gamepad1;
+
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 
-import dev.easyfamily.easystack.control.EasyPIDController;
-import dev.easyfamily.easystack.control.PIDCoefficients;
-import dev.easyfamily.easystack.feedforward.FFCoefficients;
-import dev.easyfamily.easystack.feedforward.FFController;
-import dev.easyfamily.easystack.hardware.Motors.EasyMotor;
-import dev.easyfamily.easystack.hardware.Motors.EasyMotorGroup;
-import dev.easyfamily.easystack.hardware.Servo.EasyServo;
-import dev.easyfamily.easystack.hardware.Servo.EasyServoGroup;
-import dev.easyfamily.easystack.subsytem.EasySubsystem;
-import dev.easyfamily.easystack.util.InterpLUT;
+import dev.easyfamily.EasyStack.control.EasyPIDController;
+import dev.easyfamily.EasyStack.control.EasyPIDCoefficients;
+import dev.easyfamily.EasyStack.feedforward.EasyFFCoefficients;
+import dev.easyfamily.EasyStack.feedforward.EasyFFController;
+import dev.easyfamily.EasyStack.gamepad.EasyGamepad;
+import dev.easyfamily.EasyStack.hardware.Motors.EasyMotor;
+import dev.easyfamily.EasyStack.hardware.Motors.EasyMotorGroup;
+import dev.easyfamily.EasyStack.hardware.Servo.EasyServo;
+import dev.easyfamily.EasyStack.hardware.Servo.EasyServoGroup;
+import dev.easyfamily.EasyStack.subsytem.EasySubsystem;
+import dev.easyfamily.EasyStack.util.InterpLUT;
 
 public class Shooter implements EasySubsystem {
 
@@ -26,20 +29,21 @@ public class Shooter implements EasySubsystem {
     public static double targetVelocity;
 
     public boolean on = false;
-    PIDCoefficients pidCoefficients = new PIDCoefficients(0, 0, 0);
-    FFCoefficients ffCoefficients = new FFCoefficients(0, 0, 0);
+    EasyPIDCoefficients pidCoefficients = new EasyPIDCoefficients(0, 0, 0);
+    EasyFFCoefficients ffCoefficients = new EasyFFCoefficients(0, 0, 0);
 
     EasyPIDController pidController = new EasyPIDController(pidCoefficients);
-    FFController ffController = new FFController(ffCoefficients);
+    EasyFFController ffController = new EasyFFController(ffCoefficients);
     InterpLUT shooterVelocity = new InterpLUT();
     InterpLUT PositionAng = new InterpLUT();
-
+    EasyGamepad gamepad;
     public void toggle() {
         on = !on;
     }
 
     @Override
     public void init(HardwareMap hardwareMap) {
+        gamepad = new EasyGamepad(gamepad1).setADebounce(500);
         BlockerServo = new EasyServo(hardwareMap, "BlockerServo")
                 .setLimits(0.3, 0.8)
                 .addState("Closed", 1) //When .setState("Closed"), the position will go to 1
@@ -58,7 +62,6 @@ public class Shooter implements EasySubsystem {
         PositionAng.add(60, 40);
         PositionAng.add(80, 50);
         PositionAng.createLUT();
-
         shooter_motor = new EasyMotor(hardwareMap, "shooter_motor")
                 .brakeMode()
                 .reversed();
@@ -76,16 +79,14 @@ public class Shooter implements EasySubsystem {
 
     @Override
     public void loop() {
-
         double distance = 0;
         double targetAngle = PositionAng.get(distance);
         Anguladores.setAngle(targetAngle, AngleUnit.DEGREES);
 
-        if (on) {
+        if (gamepad.a()) {
             BlockerServo.setState("Open"); //0
         } else {
             BlockerServo.setState("Closed"); //1
-
         }
 
     }

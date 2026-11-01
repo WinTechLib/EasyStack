@@ -3,41 +3,27 @@ import static org.firstinspires.ftc.teamcode.subsystems.constants.kd;
 import static org.firstinspires.ftc.teamcode.subsystems.constants.kf;
 import static org.firstinspires.ftc.teamcode.subsystems.constants.ki;
 import static org.firstinspires.ftc.teamcode.subsystems.constants.kp;
-import static org.firstinspires.ftc.teamcode.subsystems.constants.target;
 
-import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.hardware.ServoImplEx;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.Gamepad;
 
-import dev.easyfamily.easystack.control.EasyPIDFController;
-import dev.easyfamily.easystack.gamepad.EasyGamepad;
-import dev.easyfamily.easystack.hardware.Motors.EasyMotor;
-import dev.easyfamily.easystack.hardware.Motors.EasyMotorGroup;
-import dev.easyfamily.easystack.hardware.Motors.EasyMotorType;
-import dev.easyfamily.easystack.hardware.Servo.EasyServo;
+import dev.easyfamily.EasyStack.Camera.EasyCamera;
+import dev.easyfamily.EasyStack.gamepad.EasyGamepad;
+import dev.easyfamily.EasyStack.hardware.Motors.EasyMotor;
+import dev.easyfamily.EasyStack.hardware.Motors.EasyMotorType;
+
 @TeleOp(name = "teste")
 public class motorTest extends LinearOpMode {
     EasyMotor motor;
-    EasyGamepad gamepad;
-
+    DcMotor motor1;
+    EasyCamera camera;
     @Override
     public void runOpMode() throws InterruptedException {
-        gamepad = new EasyGamepad(gamepad1);
-        motor = new EasyMotor(hardwareMap,"motor", EasyMotorType.REV_HD_NAKED).stopAndResetEncoder().setPositionPIDF(kp, ki, kd, kf);
+        camera = new EasyCamera(hardwareMap, "A");
         waitForStart();
         while(opModeIsActive()){
-            if(gamepad.aToggle()){motor.moveToDegrees(720);} else{motor.moveToDegrees(0);}
-
-            motor.setPositionPIDF(kp, ki, kd, kf);
-            telemetry.addData("current Pos", motor.getCurrentPosition());
-            telemetry.addData("rpm", motor.getRPM());
-            telemetry.addData("targetrpm",target);
-            telemetry.addData("rotations", motor.getRotations());
-            telemetry.addData("kp", kp);
-            telemetry.addData("ki", ki);
-            telemetry.addData("kd", kd);
-
             telemetry.update();
         }
     }
