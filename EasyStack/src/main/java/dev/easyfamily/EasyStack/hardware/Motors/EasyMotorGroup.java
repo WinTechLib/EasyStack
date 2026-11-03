@@ -15,6 +15,11 @@ import dev.easyfamily.EasyStack.control.EasyPIDCoefficients;
 import dev.easyfamily.EasyStack.control.EasyPIDFCoefficients;
 import dev.easyfamily.EasyStack.controllable.EasyController;
 import dev.easyfamily.EasyStack.controllable.EasyControllable;
+import dev.easyfamily.EasyStack.controllable.EasyFeedforward;
+import dev.easyfamily.EasyStack.controllable.EasyPositionFeedforward;
+import dev.easyfamily.EasyStack.control.wpiLibControllers.EasyArmFeedforward;
+import dev.easyfamily.EasyStack.control.wpiLibControllers.EasyElevatorFeedforward;
+import dev.easyfamily.EasyStack.control.wpiLibControllers.EasySimpleMotorFeedforward;
 import dev.easyfamily.EasyStack.feedforward.EasyFFController;
 
 public class EasyMotorGroup implements EasyControllable {
@@ -259,6 +264,50 @@ public class EasyMotorGroup implements EasyControllable {
         return this;
     }
 
+    /** Qualquer EasyFeedforward de velocidade, aplicado a todos os motores. */
+    public EasyMotorGroup setVelocityFeedforward(EasyFeedforward feedforward) {
+        all(m -> m.setVelocityFeedforward(feedforward));
+        return this;
+    }
+
+    // ------------------------------------------------------------------
+    // Feedforward de posição (os FFs são sem estado, então podem ser compartilhados)
+    // ------------------------------------------------------------------
+
+    public EasyMotorGroup setPositionFeedforward(EasyPositionFeedforward feedforward) {
+        all(m -> m.setPositionFeedforward(feedforward));
+        return this;
+    }
+
+    public EasyMotorGroup setPositionFeedforward(EasyArmFeedforward arm, double zeroAngleRad) {
+        all(m -> m.setPositionFeedforward(arm, zeroAngleRad));
+        return this;
+    }
+
+    public EasyMotorGroup setPositionFeedforward(EasyArmFeedforward arm) {
+        return setPositionFeedforward(arm, 0.0);
+    }
+
+    public EasyMotorGroup setPositionFeedforward(EasyElevatorFeedforward elevator) {
+        all(m -> m.setPositionFeedforward(elevator));
+        return this;
+    }
+
+    public EasyMotorGroup setPositionFeedforward(EasySimpleMotorFeedforward simple) {
+        all(m -> m.setPositionFeedforward(simple));
+        return this;
+    }
+
+    public EasyMotorGroup setPositionFeedforward(EasyFeedforward feedforward) {
+        all(m -> m.setPositionFeedforward(feedforward));
+        return this;
+    }
+
+    public EasyMotorGroup clearPositionFeedforward() {
+        all(EasyMotor::clearPositionFeedforward);
+        return this;
+    }
+
     public EasyMotorGroup setPositionLimits(double minTicks, double maxTicks) {
         all(m -> m.setPositionLimits(minTicks, maxTicks));
         return this;
@@ -399,6 +448,41 @@ public class EasyMotorGroup implements EasyControllable {
     public EasyMotorGroup reverse() {
         all(EasyMotor::reverse);
         return this;
+    }
+
+    /** Define o sentido do motor (potência) em todos os motores do grupo. */
+    public EasyMotorGroup setInverted(boolean inverted) {
+        all(m -> m.setInverted(inverted));
+        return this;
+    }
+
+    /**
+     * Define a fase do encoder em todos os motores do grupo. É independente de
+     * {@link #setInverted(boolean)} e não muda quando o motor é invertido.
+     */
+    public EasyMotorGroup setEncoderReversed(boolean reversed) {
+        all(m -> m.setEncoderReversed(reversed));
+        return this;
+    }
+
+    /** Define a fase do encoder de um único motor (por índice). */
+    public EasyMotorGroup setEncoderReversed(int index, boolean reversed) {
+        motors.get(index).setEncoderReversed(reversed);
+        return this;
+    }
+
+    public boolean isEncoderReversed() {
+        return leader().isEncoderReversed();
+    }
+
+    public boolean[] getEncoderReversed() {
+        boolean[] out = new boolean[motors.size()];
+        for (int i = 0; i < out.length; i++) out[i] = motors.get(i).isEncoderReversed();
+        return out;
+    }
+
+    public boolean getInverted() {
+        return leader().getInverted();
     }
 
     public EasyMotorGroup brakeMode() {

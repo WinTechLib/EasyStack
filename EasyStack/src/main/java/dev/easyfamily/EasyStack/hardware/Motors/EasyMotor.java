@@ -18,6 +18,10 @@ import dev.easyfamily.EasyStack.controllable.EasyController;
 import dev.easyfamily.EasyStack.controllable.EasyControllable;
 import dev.easyfamily.EasyStack.controllable.EasyFeedforward;
 import dev.easyfamily.EasyStack.controllable.EasyMotionProfile;
+import dev.easyfamily.EasyStack.control.wpiLibControllers.EasyArmFeedforward;
+import dev.easyfamily.EasyStack.control.wpiLibControllers.EasyElevatorFeedforward;
+import dev.easyfamily.EasyStack.control.wpiLibControllers.EasySimpleMotorFeedforward;
+import dev.easyfamily.EasyStack.controllable.EasyPositionFeedforward;
 import dev.easyfamily.EasyStack.feedforward.EasyFFController;
 
 public class EasyMotor implements EasyControllable {
@@ -41,7 +45,16 @@ public class EasyMotor implements EasyControllable {
     private double cprOverride = Double.NaN;
     private double maxRPMOverride = Double.NaN;
 
+    /** Sentido do MOTOR (potência). Não afeta a fase do encoder por si só. */
     private double direction = 1.0;
+
+    /**
+     * Fase do ENCODER em relação ao motor. Use true quando, com potência bruta
+     * positiva, o encoder bruto lê negativo (ou o contrário, conforme o seu hardware).
+     * Fica fixa: não muda quando você inverte o motor.
+     */
+    private boolean encoderReversed = false;
+
     private double positionOffset = 0.0;
 
     private double lastPower = Double.NaN;
@@ -61,6 +74,7 @@ public class EasyMotor implements EasyControllable {
     private EasyController customVelocityController;
     private EasyController customPositionController;
     private EasyFeedforward velocityFF;
+    private EasyPositionFeedforward positionFF;
 
     private EasyMotionProfile positionProfile;
     private EasyMotionProfile velocityProfile;
@@ -216,8 +230,6 @@ public class EasyMotor implements EasyControllable {
         clearDefaults();
         return this;
     }
-
-
 
     public double getRPM() {
         double cpr = getCPR();
@@ -431,17 +443,26 @@ public class EasyMotor implements EasyControllable {
         }
 
         double controllerOut = controller.calculate(getPosition(), controllerTargetPosition);
-        double profileFeedforward = 0.0;
-        if (profileState != null && velocityFF != null) {
+
+        double desiredVelocity = profileState == null ? 0.0 : profileState.velocity;
+        double desiredAcceleration = profileState == null ? 0.0 : profileState.acceleration;
+
+        // Se há FF de posição, ele é a fonte do feedforward (gravidade + perfil).
+        // Senão, mantém o comportamento antigo: usa o FF de velocidade só com perfil.
+        double modelFeedforward = 0.0;
+        if (positionFF != null) {
+            modelFeedforward = positionFF.calculate(
+                    controllerTargetPosition, desiredVelocity, desiredAcceleration);
+        } else if (profileState != null && velocityFF != null) {
             double cpr = getCPR();
             if (cpr > 0.0) {
-                double desiredRPM = profileState.velocity / cpr * 60.0;
-                double desiredRPMPerSecond = profileState.acceleration / cpr * 60.0;
-                profileFeedforward = velocityFF.calculate(desiredRPM, desiredRPMPerSecond);
+                double desiredRPM = desiredVelocity / cpr * 60.0;
+                double desiredRPMPerSecond = desiredAcceleration / cpr * 60.0;
+                modelFeedforward = velocityFF.calculate(desiredRPM, desiredRPMPerSecond);
             }
         }
 
-        double ffOut = staticFeedforward + profileFeedforward;
+        double ffOut = staticFeedforward + modelFeedforward;
         double multiplier = calculateVoltageMultiplier();
         lastControllerOutput = controllerOut;
         lastFeedforwardOutput = ffOut;
@@ -504,6 +525,104 @@ public class EasyMotor implements EasyControllable {
         return this;
     }
 
+    // ------------------------------------------------------------------
+    // Feedforward de posição
+    // ------------------------------------------------------------------
+
+    /**
+     * FF de posição genérico (ticks, ticks/s, ticks/s²). Aceita lambda.
+     * Use {@link #clearPositionFeedforward()} para remover.
+     */
+    public EasyMotor setPositionFeedforward(EasyPositionFeedforward feedforward) {
+        positionFF = feedforward;
+        return this;
+    }
+
+    /**
+     * FF de braço. A posição é convertida para radianos usando o CPR do mecanismo.
+     *
+     * @param zeroAngleRad ângulo do braço quando o encoder lê 0 (0 = horizontal)
+     */
+    public EasyMotor setPositionFeedforward(EasyArmFeedforward arm, double zeroAngleRad) {
+        if (arm == null) {
+            positionFF = null;
+            return this;
+        }
+
+        positionFF = (position, velocity, acceleration) -> {
+            double cpr = getCPR();
+            if (cpr <= 0.0) {
+                return 0.0;
+            }
+            double radPerTick = 2.0 * Math.PI / cpr;
+            return arm.calculate(
+                    zeroAngleRad + position * radPerTick,
+                    velocity * radPerTick,
+                    acceleration * radPerTick
+            );
+        };
+        return this;
+    }
+
+    /** FF de braço com ângulo 0 (horizontal) na posição 0 do encoder. */
+    public EasyMotor setPositionFeedforward(EasyArmFeedforward arm) {
+        return setPositionFeedforward(arm, 0.0);
+    }
+
+    /** FF de elevador (kG constante). Velocidade em RPM e aceleração em RPM/s. */
+    public EasyMotor setPositionFeedforward(EasyElevatorFeedforward elevator) {
+        if (elevator == null) {
+            positionFF = null;
+            return this;
+        }
+
+        positionFF = (position, velocity, acceleration) ->
+                elevator.calculate(ticksToRPM(velocity), ticksToRPM(acceleration));
+        return this;
+    }
+
+    /** FF simples de motor (kS, kV, kA). Velocidade em RPM e aceleração em RPM/s. */
+    public EasyMotor setPositionFeedforward(EasySimpleMotorFeedforward simple) {
+        if (simple == null) {
+            positionFF = null;
+            return this;
+        }
+
+        positionFF = (position, velocity, acceleration) ->
+                simple.calculate(ticksToRPM(velocity), ticksToRPM(acceleration));
+        return this;
+    }
+
+    /** Qualquer EasyFeedforward de velocidade (ex.: EasyFFController) usado no modo posição. */
+    public EasyMotor setPositionFeedforward(EasyFeedforward feedforward) {
+        if (feedforward == null) {
+            positionFF = null;
+            return this;
+        }
+
+        positionFF = (position, velocity, acceleration) ->
+                feedforward.calculate(ticksToRPM(velocity), ticksToRPM(acceleration));
+        return this;
+    }
+
+    public EasyMotor clearPositionFeedforward() {
+        positionFF = null;
+        return this;
+    }
+
+    public EasyPositionFeedforward getPositionFeedforward() {
+        return positionFF;
+    }
+
+    public boolean hasPositionFeedforward() {
+        return positionFF != null;
+    }
+
+    private double ticksToRPM(double ticksPerSecond) {
+        double cpr = getCPR();
+        return cpr <= 0.0 ? 0.0 : ticksPerSecond / cpr * 60.0;
+    }
+
     public EasyMotor setStaticFeedforward(double power) {
         staticFeedforward = power;
         return this;
@@ -564,13 +683,42 @@ public class EasyMotor implements EasyControllable {
         return this;
     }
 
+    // ------------------------------------------------------------------
+    // Encoder (fase separada da direção do motor)
+    // ------------------------------------------------------------------
+
+    /**
+     * Sinal aplicado às leituras do encoder. Combina a direção do motor com a
+     * fase fixa do encoder, de modo que o RPM/posição lógicos fiquem positivos
+     * quando a potência lógica é positiva, independente de {@link #setInverted}.
+     */
+    private double encoderSign() {
+        return direction * (encoderReversed ? -1.0 : 1.0);
+    }
+
+    /**
+     * Informa que o encoder do motor lê no sentido oposto ao da potência.
+     * Use quando, com potência lógica positiva, o RPM lógico sai negativo.
+     */
+    public EasyMotor setEncoderReversed(boolean reversed) {
+        encoderReversed = reversed;
+        lastVelocity = 0;
+        lastAcceleration = 0;
+        resetControllers();
+        return this;
+    }
+
+    public boolean isEncoderReversed() {
+        return encoderReversed;
+    }
+
     public double getRawPosition() {
         return motor.getCurrentPosition();
     }
 
     @Override
     public double getPosition() {
-        return (getRawPosition() - positionOffset) * direction;
+        return (getRawPosition() - positionOffset) * encoderSign();
     }
 
     public double getCurrentPosition() {
@@ -584,7 +732,7 @@ public class EasyMotor implements EasyControllable {
     }
 
     public EasyMotor setPositionOffset(double position) {
-        positionOffset = getRawPosition() - (position * direction);
+        positionOffset = getRawPosition() - (position * encoderSign());
         resetControllers();
         return this;
     }
@@ -606,7 +754,7 @@ public class EasyMotor implements EasyControllable {
 
     @Override
     public double getVelocity() {
-        return motor.getVelocity() * direction;
+        return motor.getVelocity() * encoderSign();
     }
 
     public double getAcceleration() {
@@ -807,6 +955,7 @@ public class EasyMotor implements EasyControllable {
     public double getCurrent(CurrentUnit unit) {
         return motor.getCurrent(unit);
     }
+
     private double gearRatio = 1.0;
     private boolean encoderOnOutput = false;
 
@@ -856,6 +1005,7 @@ public class EasyMotor implements EasyControllable {
 
         return max / gearRatio;
     }
+
     public double getCurrentAlert(CurrentUnit unit) {
         return motor.getCurrentAlert(unit);
     }
@@ -876,6 +1026,7 @@ public class EasyMotor implements EasyControllable {
     public ControlMode getControlMode() {
         return ControlMode.valueOf(mode.name());
     }
+
     public double getTargetVelocityTicks() {
         return targetRPM * getCPR() / 60.0;
     }
@@ -900,12 +1051,15 @@ public class EasyMotor implements EasyControllable {
     public double getDegreesError() {
         return getTargetDegrees() - getDegrees();
     }
+
     public double getControllerOutput() {
         return lastControllerOutput;
     }
+
     public double getFeedforwardOutput() {
         return lastFeedforwardOutput;
     }
+
     public double getVoltageMultiplier() {
         return lastVoltageMultiplier;
     }
@@ -913,15 +1067,19 @@ public class EasyMotor implements EasyControllable {
     public double getRequestedPower() {
         return lastRequestedPower;
     }
+
     public double getShapedPower() {
         return lastShapedPower;
     }
+
     public EasyPIDFCoefficients getVelocityPIDFCoefficients() {
         return activeVelocityCoeffs();
     }
+
     public EasyPIDCoefficients getPositionPIDCoefficients() {
         return activePositionCoeffs();
     }
+
     public EasyPIDFCoefficients getPositionPIDFCoefficients() {
         return positionPIDFCoeffs;
     }
@@ -1013,6 +1171,7 @@ public class EasyMotor implements EasyControllable {
     public boolean isBrakeMode() {
         return motor.getZeroPowerBehavior() == DcMotor.ZeroPowerBehavior.BRAKE;
     }
+
     public String getDebugString() {
         return String.format(
                 Locale.US,
@@ -1024,6 +1183,7 @@ public class EasyMotor implements EasyControllable {
                 getPower(), getCurrentAmps()
         );
     }
+
     public EasyMotor addTelemetry(Telemetry telemetry) {
         return addTelemetry(telemetry, name);
     }

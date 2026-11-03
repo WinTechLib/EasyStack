@@ -13,9 +13,7 @@ public class BasketHigh extends EasyCommandBase {
     }
 
     @Override
-    public void initialize() {
-        slide.basketHigh();
-    }
+    public void initialize() {slide.basketHigh();}
 
     @Override
     public void execute() {

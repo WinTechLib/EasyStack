@@ -1,9 +1,10 @@
+
 package dev.easyfamily.EasyStack.drivebase;
+
+import java.util.Objects;
 
 import dev.easyfamily.EasyStack.drivebase.drive.DrivePowers;
 import dev.easyfamily.EasyStack.drivebase.drive.RobotDrive;
-import dev.easyfamily.EasyStack.geometry.Rotation2d;
-import dev.easyfamily.EasyStack.geometry.Vector2d;
 import dev.easyfamily.EasyStack.hardware.Motors.EasyMotor;
 
 public class MecanumDrive extends RobotDrive {
@@ -14,6 +15,21 @@ public class MecanumDrive extends RobotDrive {
     private final EasyMotor backRight;
 
     private double rightSideMultiplier = -1.0;
+
+
+    @FunctionalInterface
+    public interface FieldCentricCalculator {
+
+        double[] calculate(
+                double strafe,
+                double forward,
+                double turn,
+                double heading
+        );
+    }
+
+    private FieldCentricCalculator fieldCentricCalculator =
+            this::calculateDefaultFieldCentric;
 
     public MecanumDrive(
             EasyMotor frontLeft,
@@ -37,54 +53,60 @@ public class MecanumDrive extends RobotDrive {
             EasyMotor backLeft,
             EasyMotor backRight
     ) {
-        this.frontLeft = frontLeft;
-        this.frontRight = frontRight;
-        this.backLeft = backLeft;
-        this.backRight = backRight;
+        this.frontLeft = Objects.requireNonNull(frontLeft, "frontLeft");
+        this.frontRight = Objects.requireNonNull(frontRight, "frontRight");
+        this.backLeft = Objects.requireNonNull(backLeft, "backLeft");
+        this.backRight = Objects.requireNonNull(backRight, "backRight");
 
         setRightSideInverted(autoInvert);
     }
-
-    // ------------------------------------------------------------
-    // Configuration
-    // ------------------------------------------------------------
 
     public boolean isRightSideInverted() {
         return rightSideMultiplier == -1.0;
     }
 
-    public MecanumDrive setRightSideInverted(
-            boolean inverted
+    public MecanumDrive setRightSideInverted(boolean inverted) {
+        rightSideMultiplier = inverted ? -1.0 : 1.0;
+        return this;
+    }
+
+    public MecanumDrive setFieldCentricCalculator(
+            FieldCentricCalculator calculator
     ) {
-        rightSideMultiplier =
-                inverted ? -1.0 : 1.0;
+        this.fieldCentricCalculator =
+                Objects.requireNonNull(calculator, "calculator");
+
+        return this;
+    }
+    public MecanumDrive useDefaultFieldCentricCalculator() {
+        this.fieldCentricCalculator =
+                this::calculateDefaultFieldCentric;
 
         return this;
     }
 
     @Override
-    public MecanumDrive setMaxOutput(
-            double maxOutput
-    ) {
+    public MecanumDrive setMaxOutput(double maxOutput) {
         super.setMaxOutput(maxOutput);
         return this;
     }
-
-    // ------------------------------------------------------------
-    // Robot Centric
-    // ------------------------------------------------------------
 
     public void driveRobotCentric(
             double strafe,
             double forward,
             double turn
     ) {
-        driveFieldCentric(
+        strafe = clipUnit(strafe);
+        forward = clipUnit(forward);
+        turn = clipUnit(turn);
+
+        double[] wheelPowers = calculateMecanumPowers(
                 strafe,
                 forward,
-                turn,
-                0.0
+                turn
         );
+
+        applyWheelPowers(wheelPowers);
     }
 
     public void driveRobotCentric(
@@ -94,21 +116,13 @@ public class MecanumDrive extends RobotDrive {
             boolean squareInputs
     ) {
         if (squareInputs) {
-            strafe = squareInput(strafe);
-            forward = squareInput(forward);
-            turn = squareInput(turn);
+            strafe = squareInputValue(strafe);
+            forward = squareInputValue(forward);
+            turn = squareInputValue(turn);
         }
 
-        driveRobotCentric(
-                strafe,
-                forward,
-                turn
-        );
+        driveRobotCentric(strafe, forward, turn);
     }
-
-    // ------------------------------------------------------------
-    // Field Centric
-    // ------------------------------------------------------------
 
     public void driveFieldCentric(
             double strafe,
@@ -116,51 +130,24 @@ public class MecanumDrive extends RobotDrive {
             double turn,
             double heading
     ) {
-        strafe = clip(strafe);
-        forward = clip(forward);
-        turn = clip(turn);
+        strafe = clipUnit(strafe);
+        forward = clipUnit(forward);
+        turn = clipUnit(turn);
 
-        Vector2d input = new Vector2d(
+        if (!isFinite(heading)) {
+            throw new IllegalArgumentException(
+                    "Heading must be a finite value."
+            );
+        }
+
+        double[] wheelPowers = fieldCentricCalculator.calculate(
                 strafe,
-                forward
+                forward,
+                turn,
+                heading
         );
 
-        input = input.rotateBy(Rotation2d.fromRadians(-heading));
-
-        double theta = input.angle();
-
-        double[] wheelSpeeds = new double[4];
-
-        wheelSpeeds[0] =
-                Math.sin(theta + Math.PI / 4);
-
-        wheelSpeeds[1] =
-                Math.sin(theta - Math.PI / 4);
-
-        wheelSpeeds[2] =
-                Math.sin(theta - Math.PI / 4);
-
-        wheelSpeeds[3] =
-                Math.sin(theta + Math.PI / 4);
-
-        normalize(
-                wheelSpeeds,
-                input.norm()
-        );
-
-        wheelSpeeds[0] += turn;
-        wheelSpeeds[1] -= turn;
-        wheelSpeeds[2] += turn;
-        wheelSpeeds[3] -= turn;
-
-        normalize(wheelSpeeds);
-
-        driveWithMotorPowers(
-                wheelSpeeds[0],
-                wheelSpeeds[1],
-                wheelSpeeds[2],
-                wheelSpeeds[3]
-        );
+        applyWheelPowers(wheelPowers);
     }
 
     public void driveFieldCentric(
@@ -171,9 +158,9 @@ public class MecanumDrive extends RobotDrive {
             boolean squareInputs
     ) {
         if (squareInputs) {
-            strafe = squareInput(strafe);
-            forward = squareInput(forward);
-            turn = squareInput(turn);
+            strafe = squareInputValue(strafe);
+            forward = squareInputValue(forward);
+            turn = squareInputValue(turn);
         }
 
         driveFieldCentric(
@@ -183,10 +170,94 @@ public class MecanumDrive extends RobotDrive {
                 heading
         );
     }
+    private double[] calculateDefaultFieldCentric(
+            double strafe,
+            double forward,
+            double turn,
+            double heading
+    ) {
+        double cos = Math.cos(heading);
+        double sin = Math.sin(heading);
 
-    // ------------------------------------------------------------
-    // Direct Motor Control
-    // ------------------------------------------------------------
+        double robotStrafe =
+                strafe * cos + forward * sin;
+
+        double robotForward =
+                -strafe * sin + forward * cos;
+
+        return calculateMecanumPowers(
+                robotStrafe,
+                robotForward,
+                turn
+        );
+    }
+    private double[] calculateMecanumPowers(
+            double strafe,
+            double forward,
+            double turn
+    ) {
+        return new double[] {
+
+                // Front Left
+                forward + strafe + turn,
+
+                // Front Right
+                forward - strafe - turn,
+
+                // Back Left
+                forward - strafe + turn,
+
+                // Back Right
+                forward + strafe - turn
+        };
+    }
+    private void applyWheelPowers(double[] wheelPowers) {
+
+        double[] normalized = normalizeWheelPowers(wheelPowers);
+
+        driveWithMotorPowers(
+                normalized[0],
+                normalized[1],
+                normalized[2],
+                normalized[3]
+        );
+    }
+
+    private double[] normalizeWheelPowers(double[] powers) {
+
+        if (powers == null || powers.length != 4) {
+            throw new IllegalArgumentException(
+                    "Field Centric calculator must return exactly 4 wheel powers."
+            );
+        }
+
+        double[] normalized = powers.clone();
+        double maxMagnitude = 0.0;
+
+        for (double power : normalized) {
+
+            if (!isFinite(power)) {
+                throw new IllegalArgumentException(
+                        "Wheel powers must be finite values."
+                );
+            }
+
+            maxMagnitude = Math.max(
+                    maxMagnitude,
+                    Math.abs(power)
+            );
+        }
+
+        if (maxMagnitude > 1.0) {
+
+            for (int i = 0; i < normalized.length; i++) {
+                normalized[i] /= maxMagnitude;
+            }
+        }
+
+        return normalized;
+    }
+
 
     public void driveWithMotorPowers(
             double frontLeft,
@@ -195,31 +266,45 @@ public class MecanumDrive extends RobotDrive {
             double backRight
     ) {
         this.frontLeft.setPower(
-                frontLeft
-                        * maxOutput
+                clipUnit(frontLeft * maxOutput)
         );
 
         this.frontRight.setPower(
-                frontRight
-                        * rightSideMultiplier
-                        * maxOutput
+                clipUnit(
+                        frontRight
+                                * rightSideMultiplier
+                                * maxOutput
+                )
         );
 
         this.backLeft.setPower(
-                backLeft
-                        * maxOutput
+                clipUnit(backLeft * maxOutput)
         );
 
         this.backRight.setPower(
-                backRight
-                        * rightSideMultiplier
-                        * maxOutput
+                clipUnit(
+                        backRight
+                                * rightSideMultiplier
+                                * maxOutput
+                )
         );
     }
 
-    // ------------------------------------------------------------
-    // Drivetrain
-    // ------------------------------------------------------------
+
+    private static double clipUnit(double value) {
+        return Math.max(-1.0, Math.min(1.0, value));
+    }
+
+    private static double squareInputValue(double value) {
+        value = clipUnit(value);
+        return Math.copySign(value * value, value);
+    }
+
+    private static boolean isFinite(double value) {
+        return !Double.isNaN(value)
+                && !Double.isInfinite(value);
+    }
+
 
     @Override
     public void drive(DrivePowers powers) {

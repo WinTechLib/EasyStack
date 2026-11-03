@@ -31,7 +31,7 @@ mavenPublishing {
     publishToMavenCentral('CENTRAL_PORTAL')
     signAllPublications()
 
-    coordinates('io.github.ferreirovskizz', 'wintechlib', '1.0.4')
+    coordinates('io.github.ferreirovskizz', 'wintechlib', '1.1.0')
 
     pom {
         name = 'EasyStack'
