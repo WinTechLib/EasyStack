@@ -1,6 +1,10 @@
 package dev.easyfamily.EasyStack.gamepad;
 
 import com.qualcomm.robotcore.hardware.Gamepad;
+
+import java.util.Objects;
+
+import dev.easyfamily.EasyStack.Commands.EasyTrigger;
 public class EasyGamepad {
     public enum Button {
         A, B, X, Y,
@@ -15,13 +19,14 @@ public class EasyGamepad {
 
     private final Gamepad gamepad;
     private final ButtonState[] states = new ButtonState[BUTTONS.length];
+    private final EasyTrigger[] buttonTriggers = new EasyTrigger[BUTTONS.length];
 
     private float stickDeadzone = 0.0f;
     private float triggerThreshold = 0.5f;
     private boolean invertY = false;
 
     public EasyGamepad(Gamepad gamepad) {
-        this.gamepad = gamepad;
+        this.gamepad = Objects.requireNonNull(gamepad, "gamepad");
         for (int i = 0; i < states.length; i++) {
             states[i] = new ButtonState();
         }
@@ -54,6 +59,44 @@ public class EasyGamepad {
             default: throw new IllegalStateException("Unknown button: " + button);
         }
     }
+    /**
+     * Returns a cached EasyTrigger for a digital button. Create bindings after
+     * EasyCommandScheduler.reset(), then call update() once per OpMode loop.
+     */
+    public EasyTrigger button(Button button) {
+        Objects.requireNonNull(button, "button");
+
+        int index = button.ordinal();
+        if (buttonTriggers[index] == null) {
+            buttonTriggers[index] = new EasyTrigger(() -> down(button));
+        }
+
+        return buttonTriggers[index];
+    }
+
+    // Fluent button-binding accessors. Existing boolean methods remain unchanged.
+    public EasyTrigger aButton() { return button(Button.A); }
+    public EasyTrigger bButton() { return button(Button.B); }
+    public EasyTrigger xButton() { return button(Button.X); }
+    public EasyTrigger yButton() { return button(Button.Y); }
+
+    public EasyTrigger dpadUpButton() { return button(Button.DPAD_UP); }
+    public EasyTrigger dpadDownButton() { return button(Button.DPAD_DOWN); }
+    public EasyTrigger dpadLeftButton() { return button(Button.DPAD_LEFT); }
+    public EasyTrigger dpadRightButton() { return button(Button.DPAD_RIGHT); }
+
+    public EasyTrigger leftBumperButton() { return button(Button.LEFT_BUMPER); }
+    public EasyTrigger rightBumperButton() { return button(Button.RIGHT_BUMPER); }
+
+    // The boolean accessors leftStickButton()/rightStickButton() already exist.
+    public EasyTrigger leftStickButtonTrigger() { return button(Button.LEFT_STICK_BUTTON); }
+    public EasyTrigger rightStickButtonTrigger() { return button(Button.RIGHT_STICK_BUTTON); }
+
+    public EasyTrigger startButton() { return button(Button.START); }
+    public EasyTrigger backButton() { return button(Button.BACK); }
+    public EasyTrigger leftTriggerButton() { return button(Button.LEFT_TRIGGER); }
+    public EasyTrigger rightTriggerButton() { return button(Button.RIGHT_TRIGGER); }
+
     public boolean down(Button button) {
         return states[button.ordinal()].isDown();
     }
@@ -297,39 +340,42 @@ public class EasyGamepad {
 
         private boolean current;
         private boolean previous;
-
         private boolean pressed;
         private boolean released;
-
         private boolean toggled;
 
+        private boolean candidate;
+        private boolean initialized;
+        private long candidateSince;
         private long debounceNanos = 50_000_000L;
-        private long lastPressTime;
-        private boolean hasPressedBefore = false;
 
         private void update(boolean input, long now) {
             previous = current;
-            current = input;
-
             pressed = false;
             released = false;
 
-            if (current && !previous) {
-                boolean debouncePassed =
-                        !hasPressedBefore ||
-                                now - lastPressTime >= debounceNanos;
-
-                if (debouncePassed) {
-                    pressed = true;
-                    toggled = !toggled;
-
-                    lastPressTime = now;
-                    hasPressedBefore = true;
-                }
+            if (!initialized) {
+                candidate = input;
+                candidateSince = now;
+                initialized = true;
+            } else if (input != candidate) {
+                candidate = input;
+                candidateSince = now;
             }
 
-            if (!current && previous) {
-                released = true;
+            // Accept a state transition only after the input remains stable
+            // for the configured debounce interval.
+            if (candidate != current
+                    && now - candidateSince >= debounceNanos) {
+
+                current = candidate;
+
+                if (current) {
+                    pressed = true;
+                    toggled = !toggled;
+                } else {
+                    released = true;
+                }
             }
         }
 

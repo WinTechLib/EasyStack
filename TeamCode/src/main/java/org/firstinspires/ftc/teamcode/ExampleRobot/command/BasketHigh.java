@@ -1,19 +1,33 @@
+
 package org.firstinspires.ftc.teamcode.ExampleRobot.command;
 
+import java.util.Objects;
+
 import org.firstinspires.ftc.teamcode.ExampleRobot.subsystems.Slide;
+
 import dev.easyfamily.EasyStack.Commands.EasyCommandBase;
 
 public class BasketHigh extends EasyCommandBase {
 
     private final Slide slide;
 
+    private boolean finished;
+
     public BasketHigh(Slide subsystem) {
-        this.slide = subsystem;
+
+        this.slide = Objects.requireNonNull(subsystem);
+
         addRequirements(this.slide);
     }
 
     @Override
-    public void initialize() {slide.basketHigh();}
+    public void initialize() {
+        finished = false;
+
+        slide.basketHigh();
+
+        finished = true;
+    }
 
     @Override
     public void execute() {
@@ -21,7 +35,7 @@ public class BasketHigh extends EasyCommandBase {
 
     @Override
     public boolean isFinished() {
-        return false;
+        return finished;
     }
 
     @Override
